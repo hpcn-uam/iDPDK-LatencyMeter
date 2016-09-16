@@ -44,7 +44,11 @@ APP = hpcn_n2d
 # all source are stored in SRCS-y
 SRCS-y := main.c config.c init.c runtime.c hptl.c
 
-CFLAGS += -O3 -march=native -msse4.2 -msse4.1 -mssse3 -msse4 -msse2
+CUSTOMCFLAGS = -flto -O3 #-march=native -msse4.2 -msse4.1 -mssse3 -msse4 -msse2
+
+CFLAGS += $(CUSTOMCFLAGS) -march=native -msse4.2 -msse4.1 -mssse3 -msse4 -msse2
+LDFLAGS += $(CUSTOMCFLAGS)
+
 # CFLAGS += -g 
 CFLAGS += $(WERROR_FLAGS) #-DTESTMAIN -DEXTHDD
 CFLAGS_config.o := -D_GNU_SOURCE

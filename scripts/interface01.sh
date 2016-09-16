@@ -1,6 +1,18 @@
 #!/bin/bash
 
-cd ..
+#Current directory
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+#DPDK Directory
+export RTE_SDK=$DIR/../dpdk
+
+#DPDK (default) TARGET
+if [ -z "$RTE_TARGET" ]
+then
+        export RTE_TARGET=x86_64-native-linuxapp-gcc
+fi
+
+cd $DIR/..
 git submodule update --init
 cd src
 make

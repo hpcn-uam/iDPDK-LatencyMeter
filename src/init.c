@@ -408,7 +408,7 @@ static void
 app_init_nics(void)
 {
 	unsigned socket;
-	uint32_t lcore;
+	uint32_t lcore=0;
 	uint8_t port, queue;
 	int ret;
 	uint32_t n_rx_queues, n_tx_queues;
