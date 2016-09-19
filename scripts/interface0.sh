@@ -15,8 +15,8 @@ fi
 cd $DIR/..
 git submodule update --init
 cd src
-make
-
+make -j5 && \
+\
         # c = numero de procesadores
         # n = numero de canales de memoria
         # --rx "(PORT, QUEUE, LCORE), ..." : List of NIC RX ports and queues       
@@ -47,8 +47,8 @@ make
         #   F = I/O TX lcore write burst size to NIC TX (default value is 144)   
         # pos-lb POS : Position of the 1-byte field within the input packet used by
         #   the I/O RX lcores to identify the worker lcore for the current      
-        #   packet (default value is 29)    
-
-        sudo build/app/hpcn_n2d -c F -n 2 $1 -- --rx "(0,0,1)" --tx "(0,2)" \
+        #   packet (default value is 29)
+\
+        sudo build/app/hpcn_n2d -c F -n 2 -- --rx "(0,0,1)" --tx "(0,2)" \
                 --rsz "1024, 2048, 1024, 1024" \
                 --bsz "(144, 144), (144, 144), (144, 144)"
