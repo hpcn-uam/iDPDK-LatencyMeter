@@ -221,7 +221,7 @@ app_lcore_io_rx(
 		}
 
 		if(++counter>APP_STATS){
-			printf("Latency %lu ns\n",hptl_get()-(*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+90)));
+			printf("Latency %lu ns\n",hptl_get()-(*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])-8)));
 			counter =0;
 		}
 
@@ -365,7 +365,7 @@ app_lcore_io_tx(
 	uint32_t bsz_wr)
 {
 	uint32_t worker;
-
+	
 	for (worker = 0; worker < n_workers; worker ++) {
 		uint32_t i;
 
