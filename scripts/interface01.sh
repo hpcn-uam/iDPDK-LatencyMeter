@@ -49,6 +49,6 @@ make
         #   the I/O RX lcores to identify the worker lcore for the current      
         #   packet (default value is 29)    
 
-        build/app/hpcn_n2d -c 1F -n 2 $1 -- --rx "(0,0,1),(0,0,2)" --tx "(0,3),(0,4)" \
+        build/app/hpcn_n2d -c F -n 2 $1 -- --rx "(0,0,1)" --tx "(1,3)" \
                 --rsz "1024, 2048, 1024, 1024" \
                 --bsz "(144, 144), (144, 144), (144, 144)"

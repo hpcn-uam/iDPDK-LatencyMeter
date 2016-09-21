@@ -399,7 +399,7 @@ app_lcore_io_tx(
 			tmpbuf->pkt_len = icmppktlen;
 			tmpbuf->data_len = icmppktlen;
 			tmpbuf->port = port;
-			memcpy(rte_ctrlmbuf_data(tmpbuf),icmppkt,icmppktlen);
+			memcpy(rte_ctrlmbuf_data(tmpbuf),icmppkt,icmppktlen-8);
 			*((hptl_t*)(rte_ctrlmbuf_data(tmpbuf)+icmppktlen-8)) = hptl_get();
 
 			/*if (unlikely(n_mbufs < bsz_wr)) {

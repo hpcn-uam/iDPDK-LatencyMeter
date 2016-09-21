@@ -44,7 +44,7 @@ APP = hpcn_n2d
 # all source are stored in SRCS-y
 SRCS-y := main.c config.c init.c runtime.c hptl.c
 
-CUSTOMCFLAGS = -flto -O3 -g #-march=native -msse4.2 -msse4.1 -mssse3 -msse4 -msse2
+CUSTOMCFLAGS = -O3 -flto #-march=native -msse4.2 -msse4.1 -mssse3 -msse4 -msse2
 
 CFLAGS += $(CUSTOMCFLAGS) -march=native -msse4.2 -msse4.1 -mssse3 -msse4 -msse2
 LDFLAGS += $(CUSTOMCFLAGS)
@@ -52,7 +52,6 @@ LDFLAGS += $(CUSTOMCFLAGS)
 # CFLAGS += -g 
 CFLAGS += $(WERROR_FLAGS) #-DTESTMAIN -DEXTHDD
 CFLAGS_config.o := -D_GNU_SOURCE
-CFLAGS_external.o := -D_GNU_SOURCE
 
 # workaround for a gcc bug with noreturn attribute
 # http://gcc.gnu.org/bugzilla/show_bug.cgi?id=12603
