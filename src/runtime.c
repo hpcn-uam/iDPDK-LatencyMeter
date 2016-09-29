@@ -207,11 +207,7 @@ app_lcore_io_rx(
 			latencyStats[counter].recvTime=hptl_get();
 			latencyStats[counter].sentTime = (*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])-8));
 			latencyStats[counter].recved=1;
-		}
-
-		if(++counter>APP_STATS){
-			printf("Latency %lu ns\n",hptl_get()-(*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])-8)));
-			counter =0;
+			++counter;
 		}
 
 #if APP_STATS
