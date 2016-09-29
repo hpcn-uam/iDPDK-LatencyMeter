@@ -134,6 +134,7 @@ uint8_t arppkt []={
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xa8, 0x00, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
+int arppktlen = sizeof(arppkt);
 
 uint8_t icmppkt []={
 0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2, 0xef, 0x57, 0x08, 0x00, 0x45, 0x00,
@@ -144,12 +145,12 @@ uint8_t icmppkt []={
 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35,
 0x36, 0x37
 };
+int icmppktlen = sizeof(icmppkt);
 
 int doChecksum = 0;
 int autoIncNum = 0;
 unsigned long trainLen = 0;
 unsigned long trainTime = 5000; //ms
-int icmppktlen = sizeof(icmppkt);
 
 int continueRX = 1;
 
@@ -379,6 +380,41 @@ app_lcore_io_tx(
 }
 
 static void
+app_lcore_arp_tx_gratuitous(struct app_lcore_params_io *lp)
+{
+	uint32_t i;
+	for (i = 0; i < lp->tx.n_nic_ports; i ++) {
+		uint8_t port = lp->tx.nic_ports[i];
+
+		struct rte_mbuf * tmpbuf = rte_ctrlmbuf_alloc(app.pools[0]) ;
+		if(!tmpbuf){
+			puts("Error creating gratuitous ARP");
+			exit(-1);
+		}
+
+		tmpbuf->pkt_len = arppktlen;
+		tmpbuf->data_len = arppktlen;
+		tmpbuf->port = port;
+		
+		memcpy(rte_ctrlmbuf_data(tmpbuf),arppkt,arppktlen);
+
+		rte_eth_macaddr_get (port, (struct ether_addr *)(rte_ctrlmbuf_data(tmpbuf)+6));
+		rte_eth_macaddr_get (port, (struct ether_addr *)(rte_ctrlmbuf_data(tmpbuf)+6+6+2+8));
+		memcpy(rte_ctrlmbuf_data(tmpbuf)+6+6+2+14, icmppkt+6+6+2+4*4, 4);
+
+		if (!rte_eth_tx_burst(
+				port,
+				0,
+				&tmpbuf,
+				1))
+			{
+			puts("Error sending gratuitous ARP");
+			exit(-1);
+		}
+	}
+}
+
+static void
 app_lcore_main_loop_io(void)
 {
 	uint32_t lcore = rte_lcore_id();
@@ -390,6 +426,8 @@ app_lcore_main_loop_io(void)
 	uint32_t bsz_rx_wr = app.burst_size_io_rx_write;
 
 	uint8_t pos_lb = app.pos_lb;
+
+	app_lcore_arp_tx_gratuitous(lp);
 
 	for ( ; ; ) {
 		if (likely(lp->rx.n_nic_queues > 0)) {

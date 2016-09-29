@@ -606,7 +606,6 @@ app_parse_args(int argc, char **argv)
 		{"ethd", 1, 0, 0},
 		{"ipo", 1, 0, 0},
 		{"ipd", 1, 0, 0},
-		{"ipd", 1, 0, 0},
 		//Trains, if not set, permanent connection would be done
 		{"trainLen", 1, 0, 0},
 		{"trainTime", 1, 0, 0},
