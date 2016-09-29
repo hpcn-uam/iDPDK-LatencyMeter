@@ -572,6 +572,21 @@ parse_arg_trainLen(const char *arg)
 	return 0;
 }
 
+static int
+parse_arg_trainTime(const char *arg)
+{
+	if(sscanf(arg,"%lu", &trainTime)!=1){
+		return -1;
+	}
+
+	if(latencyStats)
+		free(latencyStats);
+	
+	latencyStats = rte_calloc("latency_stats",trainTime,sizeof(struct pktLatencyStat),0);
+
+	return 0;
+}
+
 /* Parse the argument given in the command line of the application */
 int
 app_parse_args(int argc, char **argv)
@@ -594,6 +609,7 @@ app_parse_args(int argc, char **argv)
 		{"ipd", 1, 0, 0},
 		//Trains, if not set, permanent connection would be done
 		{"trainLen", 1, 0, 0},
+		{"trainTime", 1, 0, 0},
 		//Auto fix ICMP packets
 		{"chksum", 0, 0, 0},
 		{"autoInc", 0, 0, 0},
@@ -684,6 +700,13 @@ app_parse_args(int argc, char **argv)
 				ret = parse_arg_trainLen(optarg);
 				if (ret) {
 					printf("Incorrect value for --trainLen argument (%s, error code: %d)\n", optarg, ret);
+					return -1;
+				}
+			}
+			if (!strcmp(lgopts[option_index].name, "trainTime")) {
+				ret = parse_arg_trainTime(optarg);
+				if (ret) {
+					printf("Incorrect value for --trainTime argument (%s, error code: %d)\n", optarg, ret);
 					return -1;
 				}
 			}
