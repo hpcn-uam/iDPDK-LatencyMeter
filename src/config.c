@@ -572,6 +572,7 @@ app_parse_args(int argc, char **argv)
 		{"ipo", 1, 0, 0},
 		{"ipd", 1, 0, 0},
 		{"ipd", 1, 0, 0},
+		//Auto fix ICMP packets
 		{"chksum", 0, 0, 0},
 		{"autoInc", 0, 0, 0},
 		//endlist
