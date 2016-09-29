@@ -363,6 +363,12 @@ struct app_params {
 	uint8_t pos_lb;
 } __rte_cache_aligned;
 
+struct pktLatencyStat {
+	hptl_t sentTime;
+	hptl_t recvTime;
+	uint8_t recved;
+} __rte_cache_aligned;
+
 extern struct app_params app;
 
 int app_parse_args(int argc, char **argv);

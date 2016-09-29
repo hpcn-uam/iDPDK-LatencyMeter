@@ -125,6 +125,16 @@
 #define APP_IO_TX_PREFETCH1(p)
 #endif
 
+#define WAITTIME 10000UL
+#define icmpStart (6+6+2+5*4)
+
+uint8_t arppkt []={
+0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x84, 0x2b, 0x2b, 0x6b, 0x4d, 0x61, 0x08, 0x06, 0x00, 0x01, 
+0x08, 0x00, 0x06, 0x04, 0x00, 0x02, 0x84, 0x2b, 0x2b, 0x6b, 0x4d, 0x61, 0xc0, 0xa8, 0x00, 0x78, 
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xa8, 0x00, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
 uint8_t icmppkt []={
 0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2, 0xef, 0x57, 0x08, 0x00, 0x45, 0x00,
 0x00, 0x54, 0x51, 0x36, 0x40, 0x00, 0x40, 0x01, 0x6b, 0xee, 0x96, 0xf4, 0x3a, 0x72, 0xd8, 0x3a,
@@ -137,7 +147,13 @@ uint8_t icmppkt []={
 
 int doChecksum = 0;
 int autoIncNum = 0;
+unsigned long trainLen = 0;
+unsigned long trainTime = 5000; //ms
 int icmppktlen = sizeof(icmppkt);
+
+int continueRX = 1;
+
+struct pktLatencyStat * latencyStats = NULL;
 
 //#define QUEUE_STATS
 static inline void
@@ -154,7 +170,7 @@ app_lcore_io_rx(
 	(void)bsz_wr;
 	(void)pos_lb;
 
-	static uint32_t counter;
+	static uint32_t counter=0;
 
 	for (i = 0; i < lp->rx.n_nic_queues; i ++) {
 		uint8_t port = lp->rx.nic_queues[i].port;
@@ -167,8 +183,29 @@ app_lcore_io_rx(
 			lp->rx.mbuf_in.array,
 			(uint16_t) bsz_rd);
 
+		if (unlikely(continueRX == 0)) {
+			printf("time to stop\n");
+			uint32_t k;
+			for(k=0;k<trainLen;k++){
+				if(latencyStats[k].recved){
+					printf("%d: (r%lu:s%lu) Latency %lu ns\n",
+						k+1,
+						latencyStats[k].recvTime,
+						latencyStats[k].sentTime,
+						latencyStats[k].recvTime - latencyStats[k].sentTime);
+				}
+			}
+			exit(0);
+		}
+
 		if (unlikely(n_mbufs == 0)) {
 			continue;
+		}
+
+		if(trainLen && (*(uint16_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+icmpStart+2+2)) == (*(uint16_t*)(icmppkt+icmpStart+2+2))){
+			latencyStats[counter].recvTime=hptl_get();
+			latencyStats[counter].sentTime = (*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])-8));
+			latencyStats[counter].recved=1;
 		}
 
 		if(++counter>APP_STATS){
@@ -292,8 +329,6 @@ app_lcore_io_tx(
 			tmpbuf->pkt_len = icmppktlen;
 			tmpbuf->data_len = icmppktlen;
 			tmpbuf->port = port;
-
-			int icmpStart = 6+6+2+5*4;
 			
 			if(autoIncNum){
 				(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
@@ -319,8 +354,18 @@ app_lcore_io_tx(
 				&tmpbuf,
 				n_mbufs);
 			
+			hptl_waitns(WAITTIME);
+
 			if (unlikely(n_pkts < n_mbufs)){
 				rte_ctrlmbuf_free(tmpbuf);
+			}else{
+				lp->tx.mbuf_out[port].n_mbufs++;
+				if(trainLen && lp->tx.mbuf_out[port].n_mbufs >= trainLen){
+					hptl_waitns(trainTime*1000000UL);
+					continueRX = 0;
+					hptl_waitns(trainTime*1000000UL);
+					exit(1);
+				}
 			}
 			/*if (unlikely(n_pkts < n_mbufs)) {
 				uint32_t k;
@@ -329,8 +374,6 @@ app_lcore_io_tx(
 					rte_pktmbuf_free(pkt_to_free);
 				}
 			}*/
-			lp->tx.mbuf_out[port].n_mbufs = 0;
-			lp->tx.mbuf_out_flush[port] = 0;
 		}
 	}
 }

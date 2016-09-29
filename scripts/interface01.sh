@@ -15,8 +15,8 @@ fi
 cd $DIR/..
 git submodule update --init
 cd src
-make
-
+make -j5 && \
+\
         # c = numero de procesadores
         # n = numero de canales de memoria
         # --rx "(PORT, QUEUE, LCORE), ..." : List of NIC RX ports and queues       
@@ -45,7 +45,7 @@ make
         #   E = I/O TX lcore read burst size from input SW rings (default value 
         #       is 144)
         #   F = I/O TX lcore write burst size to NIC TX (default value is 144)   
-
+\
         build/app/hpcn_n2d -c F -n 2 -- --rx "(0,0,1)" --tx "(1,3)" \
                 --rsz "1024, 2048, 1024, 1024" \
                 --bsz "(144, 144), (144, 144), (144, 144)" $@

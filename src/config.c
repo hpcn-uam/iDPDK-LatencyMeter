@@ -45,6 +45,7 @@
 #include <rte_common.h>
 #include <rte_byteorder.h>
 #include <rte_log.h>
+#include <rte_malloc.h>
 #include <rte_memory.h>
 #include <rte_memcpy.h>
 #include <rte_memzone.h>
@@ -491,6 +492,10 @@ parse_arg_bsz(const char *arg)
 extern uint8_t icmppkt [];
 extern int doChecksum;
 extern int autoIncNum;
+extern unsigned long trainLen;
+extern unsigned long trainTime; //ms
+
+extern struct pktLatencyStat * latencyStats;
 
 #ifndef APP_ARG_ETH_SIZE_CHARS
 #define APP_ARG_ETH_SIZE_CHARS (2*6+1*5)
@@ -552,6 +557,21 @@ parse_arg_ipd(const char *arg)
 	return 0;
 }
 
+static int
+parse_arg_trainLen(const char *arg)
+{
+	if(sscanf(arg,"%lu", &trainLen)!=1){
+		return -1;
+	}
+
+	if(latencyStats)
+		free(latencyStats);
+	
+	latencyStats = rte_calloc("latency_stats",trainLen,sizeof(struct pktLatencyStat),0);
+
+	return 0;
+}
+
 /* Parse the argument given in the command line of the application */
 int
 app_parse_args(int argc, char **argv)
@@ -572,6 +592,8 @@ app_parse_args(int argc, char **argv)
 		{"ipo", 1, 0, 0},
 		{"ipd", 1, 0, 0},
 		{"ipd", 1, 0, 0},
+		//Trains, if not set, permanent connection would be done
+		{"trainLen", 1, 0, 0},
 		//Auto fix ICMP packets
 		{"chksum", 0, 0, 0},
 		{"autoInc", 0, 0, 0},
@@ -655,6 +677,13 @@ app_parse_args(int argc, char **argv)
 				ret = parse_arg_ipd(optarg);
 				if (ret) {
 					printf("Incorrect value for --ipd argument (%s, error code: %d)\n", optarg, ret);
+					return -1;
+				}
+			}
+			if (!strcmp(lgopts[option_index].name, "trainLen")) {
+				ret = parse_arg_trainLen(optarg);
+				if (ret) {
+					printf("Incorrect value for --trainLen argument (%s, error code: %d)\n", optarg, ret);
 					return -1;
 				}
 			}
