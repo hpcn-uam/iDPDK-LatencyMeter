@@ -404,6 +404,8 @@ check_all_ports_link_status(uint8_t port_num, uint32_t port_mask)
 	}
 }
 
+extern uint8_t icmppkt [];
+
 static void
 app_init_nics(void)
 {
@@ -412,6 +414,9 @@ app_init_nics(void)
 	uint8_t port, queue;
 	int ret;
 	uint32_t n_rx_queues, n_tx_queues;
+
+	//generate random etho
+	//eth_random_addr(icmppkt+6);
 
 	/* Init NIC ports and queues, then start the ports */
 	for (port = 0; port < APP_MAX_NIC_PORTS; port ++) {
@@ -488,6 +493,15 @@ app_init_nics(void)
 		if (ret < 0) {
 			rte_panic("Cannot start port %d (%d)\n", port, ret);
 		}
+
+		//get current mac addr
+		rte_eth_macaddr_get (port, (struct ether_addr *)(icmppkt+6));
+		printf("Default ETHOrig set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX", icmppkt[6], icmppkt[7], icmppkt[8], icmppkt[9], icmppkt[10], icmppkt[11]);
+		
+		//set IP Checksum
+		struct ipv4_hdr * hdr = (struct ipv4_hdr *)(icmppkt+6+6+2);
+		hdr->hdr_checksum=0;
+		hdr->hdr_checksum=rte_ipv4_cksum(hdr);
 	}
 
 	check_all_ports_link_status(APP_MAX_NIC_PORTS, (~0x0));

@@ -110,10 +110,7 @@ static const char usage[] =
 "               is %u)                                                          \n"
 "           E = I/O TX lcore read burst size from input SW rings (default value \n"
 "               is %u)                                                          \n"
-"           F = I/O TX lcore write burst size to NIC TX (default value is %u)   \n"
-"    --pos-lb POS : Position of the 1-byte field within the input packet used by\n"
-"           the I/O RX lcores to identify the worker lcore for the current      \n"
-"           packet (default value is %u)                                        \n";
+"           F = I/O TX lcore write burst size to NIC TX (default value is %u)   \n";
 
 void
 app_print_usage(void)
@@ -128,8 +125,7 @@ app_print_usage(void)
 		APP_DEFAULT_BURST_SIZE_WORKER_READ,
 		APP_DEFAULT_BURST_SIZE_WORKER_WRITE,
 		APP_DEFAULT_BURST_SIZE_IO_TX_READ,
-		APP_DEFAULT_BURST_SIZE_IO_TX_WRITE,
-		APP_DEFAULT_IO_RX_LB_POS
+		APP_DEFAULT_BURST_SIZE_IO_TX_WRITE
 	);
 }
 
@@ -492,32 +488,69 @@ parse_arg_bsz(const char *arg)
 #define APP_ARG_NUMERICAL_SIZE_CHARS 15
 #endif
 
-static int
-parse_arg_pos_lb(const char *arg)
-{
-	uint32_t x;
-	char *endpt;
+extern uint8_t icmppkt [];
+extern int doChecksum;
+extern int autoIncNum;
 
-	if (strnlen(arg, APP_ARG_NUMERICAL_SIZE_CHARS + 1) == APP_ARG_NUMERICAL_SIZE_CHARS + 1) {
+#ifndef APP_ARG_ETH_SIZE_CHARS
+#define APP_ARG_ETH_SIZE_CHARS (2*6+1*5)
+#endif
+
+static int
+parse_arg_etho(const char *arg)
+{
+	uint8_t etho[6];
+
+	if(sscanf(arg,"%hhX:%hhX:%hhX:%hhX:%hhX:%hhX", etho+0, etho+1, etho+2, etho+3, etho+4, etho+5)!=sizeof(etho)){
 		return -1;
 	}
 
-	errno = 0;
-	x = strtoul(arg, &endpt, 10);
-	if (errno != 0 || endpt == arg || *endpt != '\0'){
-		return -2;
-	}
-
-	if (x >= 64) {
-		return -3;
-	}
-
-	app.pos_lb = (uint8_t) x;
+	memcpy(icmppkt+6,etho,sizeof(etho));
 
 	return 0;
 }
 
-extern char record_File [256];
+static int
+parse_arg_ethd(const char *arg)
+{
+	uint8_t ethd[6];
+
+	if(sscanf(arg,"%hhX:%hhX:%hhX:%hhX:%hhX:%hhX", ethd+0, ethd+1, ethd+2, ethd+3, ethd+4, ethd+5)!=sizeof(ethd)){
+		return -1;
+	}
+
+	memcpy(icmppkt,ethd,sizeof(ethd));
+
+	return 0;
+}
+
+static int
+parse_arg_ipo(const char *arg)
+{
+	uint8_t ip[4];
+
+	if(sscanf(arg,"%hhd.%hhd.%hhd.%hhd", ip+0, ip+1, ip+2, ip+3)!=sizeof(ip)){
+		return -1;
+	}
+
+	memcpy(icmppkt+6+6+2+3*4,ip,sizeof(ip));
+
+	return 0;
+}
+
+static int
+parse_arg_ipd(const char *arg)
+{
+	uint8_t ip[4];
+
+	if(sscanf(arg,"%hhd.%hhd.%hhd.%hhd", ip+0, ip+1, ip+2, ip+3)!=sizeof(ip)){
+		return -1;
+	}
+
+	memcpy(icmppkt+6+6+2+4*4,ip,sizeof(ip));
+
+	return 0;
+}
 
 /* Parse the argument given in the command line of the application */
 int
@@ -528,21 +561,26 @@ app_parse_args(int argc, char **argv)
 	int option_index;
 	char *prgname = argv[0];
 	static struct option lgopts[] = {
-		//aniadido
-		{"record", 1, 0, 0},
 		//normal
 		{"rx", 1, 0, 0},
 		{"tx", 1, 0, 0},
 		{"rsz", 1, 0, 0},
 		{"bsz", 1, 0, 0},
-		{"pos-lb", 1, 0, 0},
+		//net config
+		{"etho", 1, 0, 0},
+		{"ethd", 1, 0, 0},
+		{"ipo", 1, 0, 0},
+		{"ipd", 1, 0, 0},
+		{"ipd", 1, 0, 0},
+		{"chksum", 0, 0, 0},
+		{"autoInc", 0, 0, 0},
+		//endlist
 		{NULL, 0, 0, 0}
 	};
 	uint32_t arg_rx = 0;
 	uint32_t arg_tx = 0;
 	uint32_t arg_rsz = 0;
 	uint32_t arg_bsz = 0;
-	uint32_t arg_pos_lb = 0;
 
 	argvopt = argv;
 
@@ -575,10 +613,6 @@ app_parse_args(int argc, char **argv)
 					return -1;
 				}
 			}
-			if (!strcmp(lgopts[option_index].name, "record")) {
-				strcpy(record_File,optarg);
-				printf("Record value set to %s\n", record_File);					
-			}
 			if (!strcmp(lgopts[option_index].name, "rsz")) {
 				arg_rsz = 1;
 				ret = parse_arg_rsz(optarg);
@@ -595,13 +629,39 @@ app_parse_args(int argc, char **argv)
 					return -1;
 				}
 			}
-			if (!strcmp(lgopts[option_index].name, "pos-lb")) {
-				arg_pos_lb = 1;
-				ret = parse_arg_pos_lb(optarg);
+			if (!strcmp(lgopts[option_index].name, "etho")) {
+				ret = parse_arg_etho(optarg);
 				if (ret) {
-					printf("Incorrect value for --pos-lb argument (%d)\n", ret);
+					printf("Incorrect value for --etho argument (%s, error code: %d)\n", optarg, ret);
 					return -1;
 				}
+			}
+			if (!strcmp(lgopts[option_index].name, "ethd")) {
+				ret = parse_arg_ethd(optarg);
+				if (ret) {
+					printf("Incorrect value for --ethd argument (%s, error code: %d)\n", optarg, ret);
+					return -1;
+				}
+			}
+			if (!strcmp(lgopts[option_index].name, "ipo")) {
+				ret = parse_arg_ipo(optarg);
+				if (ret) {
+					printf("Incorrect value for --ipo argument (%s, error code: %d)\n", optarg, ret);
+					return -1;
+				}
+			}
+			if (!strcmp(lgopts[option_index].name, "ipd")) {
+				ret = parse_arg_ipd(optarg);
+				if (ret) {
+					printf("Incorrect value for --ipd argument (%s, error code: %d)\n", optarg, ret);
+					return -1;
+				}
+			}
+			if (!strcmp(lgopts[option_index].name, "chksum")) {
+				doChecksum = 1;
+			}
+			if (!strcmp(lgopts[option_index].name, "autoInc")) {
+				autoIncNum = 1;
 			}
 			break;
 
@@ -631,10 +691,6 @@ app_parse_args(int argc, char **argv)
 		app.burst_size_io_tx_write = APP_DEFAULT_BURST_SIZE_IO_TX_WRITE;
 		app.burst_size_worker_read = APP_DEFAULT_BURST_SIZE_WORKER_READ;
 		app.burst_size_worker_write = APP_DEFAULT_BURST_SIZE_WORKER_WRITE;
-	}
-
-	if (arg_pos_lb == 0) {
-		app.pos_lb = APP_DEFAULT_IO_RX_LB_POS;
 	}
 	
 	if (optind >= 0)

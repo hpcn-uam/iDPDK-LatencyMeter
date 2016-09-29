@@ -128,67 +128,16 @@
 uint8_t icmppkt []={
 0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2, 0xef, 0x57, 0x08, 0x00, 0x45, 0x00,
 0x00, 0x54, 0x51, 0x36, 0x40, 0x00, 0x40, 0x01, 0x6b, 0xee, 0x96, 0xf4, 0x3a, 0x72, 0xd8, 0x3a,
-0xd3, 0xe3, 0x08, 0x00, 0xeb, 0xe1, 0x66, 0x02, 0x00, 0x1a, 0x67, 0x72, 0x97, 0x57, 0x00, 0x00,
+0xd3, 0xe3, 0x08, 0x00, 0x00, 0x00, 0x66, 0x02, 0x00, 0x1a, 0x67, 0x72, 0x97, 0x57, 0x00, 0x00,
 0x00, 0x00, 0xe4, 0x64, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15,
 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25,
 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35,
 0x36, 0x37
 };
 
+int doChecksum = 0;
+int autoIncNum = 0;
 int icmppktlen = sizeof(icmppkt);
-
-static inline void
-app_lcore_io_rx_buffer_to_send (
-	struct app_lcore_params_io *lp,
-	uint32_t worker,
-	struct rte_mbuf *mbuf,
-	uint32_t bsz)
-{
-	uint32_t pos;
-	int ret;
-
-	pos = lp->rx.mbuf_out[worker].n_mbufs;
-	lp->rx.mbuf_out[worker].array[pos ++] = mbuf;
-	if (likely(pos < bsz)) {
-		lp->rx.mbuf_out[worker].n_mbufs = pos;
-		return;
-	}
-
-	ret = rte_ring_sp_enqueue_bulk(
-		lp->rx.rings[worker],
-		(void **) lp->rx.mbuf_out[worker].array,
-		bsz);
-
-	if (unlikely(ret == -ENOBUFS)) {
-		uint32_t k;
-		for (k = 0; k < bsz; k ++) {
-			struct rte_mbuf *m = lp->rx.mbuf_out[worker].array[k];
-			rte_pktmbuf_free(m);
-		}
-	}
-
-	lp->rx.mbuf_out[worker].n_mbufs = 0;
-	lp->rx.mbuf_out_flush[worker] = 0;
-
-#if APP_STATS
-	lp->rx.rings_iters[worker] ++;
-	if (likely(ret == 0)) {
-		lp->rx.rings_count[worker] ++;
-	}
-	if (unlikely(lp->rx.rings_iters[worker] == APP_STATS)) {
-		unsigned lcore = rte_lcore_id();
-
-		printf("\tI/O RX %u out (worker %u): enq success rate = %.2f (%u/%u)\n",
-			lcore,
-			(unsigned)worker,
-			((double) lp->rx.rings_count[worker]) / ((double) lp->rx.rings_iters[worker]),
-			(uint32_t)lp->rx.rings_count[worker],
-			(uint32_t)lp->rx.rings_iters[worker]);
-		lp->rx.rings_iters[worker] = 0;
-		lp->rx.rings_count[worker] = 0;
-	}
-#endif
-}
 
 //#define QUEUE_STATS
 static inline void
@@ -199,9 +148,11 @@ app_lcore_io_rx(
 	uint32_t bsz_wr,
 	uint8_t pos_lb)
 {
-	struct rte_mbuf *mbuf_1_0, *mbuf_1_1, *mbuf_2_0, *mbuf_2_1;
-	uint8_t *data_1_0, *data_1_1 = NULL;
 	uint32_t i;
+
+	(void)n_workers;
+	(void)bsz_wr;
+	(void)pos_lb;
 
 	static uint32_t counter;
 
@@ -294,66 +245,6 @@ app_lcore_io_rx(
 		continue;
 #endif
 
-		mbuf_1_0 = lp->rx.mbuf_in.array[0];
-		mbuf_1_1 = lp->rx.mbuf_in.array[1];
-		data_1_0 = rte_pktmbuf_mtod(mbuf_1_0, uint8_t *);
-		if (likely(n_mbufs > 1)) {
-			data_1_1 = rte_pktmbuf_mtod(mbuf_1_1, uint8_t *);
-		}
-
-		mbuf_2_0 = lp->rx.mbuf_in.array[2];
-		mbuf_2_1 = lp->rx.mbuf_in.array[3];
-		APP_IO_RX_PREFETCH0(mbuf_2_0);
-		APP_IO_RX_PREFETCH0(mbuf_2_1);
-
-		for (j = 0; j + 3 < n_mbufs; j += 2) {
-			struct rte_mbuf *mbuf_0_0, *mbuf_0_1;
-			uint8_t *data_0_0, *data_0_1;
-			uint32_t worker_0, worker_1;
-
-			mbuf_0_0 = mbuf_1_0;
-			mbuf_0_1 = mbuf_1_1;
-			data_0_0 = data_1_0;
-			data_0_1 = data_1_1;
-
-			mbuf_1_0 = mbuf_2_0;
-			mbuf_1_1 = mbuf_2_1;
-			data_1_0 = rte_pktmbuf_mtod(mbuf_2_0, uint8_t *);
-			data_1_1 = rte_pktmbuf_mtod(mbuf_2_1, uint8_t *);
-			APP_IO_RX_PREFETCH0(data_1_0);
-			APP_IO_RX_PREFETCH0(data_1_1);
-
-			mbuf_2_0 = lp->rx.mbuf_in.array[j+4];
-			mbuf_2_1 = lp->rx.mbuf_in.array[j+5];
-			APP_IO_RX_PREFETCH0(mbuf_2_0);
-			APP_IO_RX_PREFETCH0(mbuf_2_1);
-
-			worker_0 = data_0_0[pos_lb] & (n_workers - 1);
-			worker_1 = data_0_1[pos_lb] & (n_workers - 1);
-
-			app_lcore_io_rx_buffer_to_send(lp, worker_0, mbuf_0_0, bsz_wr);
-			app_lcore_io_rx_buffer_to_send(lp, worker_1, mbuf_0_1, bsz_wr);
-		}
-
-		/* Handle the last 1, 2 (when n_mbufs is even) or 3 (when n_mbufs is odd) packets  */
-		for ( ; j < n_mbufs; j += 1) {
-			struct rte_mbuf *mbuf;
-			uint8_t *data;
-			uint32_t worker;
-
-			mbuf = mbuf_1_0;
-			mbuf_1_0 = mbuf_1_1;
-			mbuf_1_1 = mbuf_2_0;
-			mbuf_2_0 = mbuf_2_1;
-
-			data = rte_pktmbuf_mtod(mbuf, uint8_t *);
-
-			APP_IO_RX_PREFETCH0(mbuf_1_0);
-
-			worker = data[pos_lb] & (n_workers - 1);
-
-			app_lcore_io_rx_buffer_to_send(lp, worker, mbuf, bsz_wr);
-		}
 	}
 }
 
@@ -394,13 +285,28 @@ app_lcore_io_tx(
 			n_mbufs = 1;
 
 			struct rte_mbuf * tmpbuf = rte_ctrlmbuf_alloc(app.pools[0]) ;
-			if(!tmpbuf)
+			if(!tmpbuf){
 				continue;
+			}
+
 			tmpbuf->pkt_len = icmppktlen;
 			tmpbuf->data_len = icmppktlen;
 			tmpbuf->port = port;
+
+			int icmpStart = 6+6+2+5*4;
+			
+			if(autoIncNum){
+				(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
+			}
+
 			memcpy(rte_ctrlmbuf_data(tmpbuf),icmppkt,icmppktlen-8);
 			*((hptl_t*)(rte_ctrlmbuf_data(tmpbuf)+icmppktlen-8)) = hptl_get();
+
+			if(doChecksum){
+				uint16_t cksum;
+				cksum = rte_raw_cksum (rte_ctrlmbuf_data(tmpbuf)+icmpStart, icmppktlen-icmpStart);
+				*((uint16_t*)(rte_ctrlmbuf_data(tmpbuf)+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
+			}
 
 			/*if (unlikely(n_mbufs < bsz_wr)) {
 				lp->tx.mbuf_out[port].n_mbufs = n_mbufs;
@@ -411,15 +317,18 @@ app_lcore_io_tx(
 				port,
 				0,
 				&tmpbuf,
-				1);
-
-			if (unlikely(n_pkts < n_mbufs)) {
+				n_mbufs);
+			
+			if (unlikely(n_pkts < n_mbufs)){
+				rte_ctrlmbuf_free(tmpbuf);
+			}
+			/*if (unlikely(n_pkts < n_mbufs)) {
 				uint32_t k;
 				for (k = n_pkts; k < n_mbufs; k ++) {
 					struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 					rte_pktmbuf_free(pkt_to_free);
 				}
-			}
+			}*/
 			lp->tx.mbuf_out[port].n_mbufs = 0;
 			lp->tx.mbuf_out_flush[port] = 0;
 		}
