@@ -149,7 +149,7 @@ int icmppktlen = sizeof(icmppkt);
 
 int doChecksum = 0;
 int autoIncNum = 0;
-unsigned long trainLen = 0;
+unsigned long trainLen = 1000;
 unsigned long trainTime = 5000; //ms
 
 int continueRX = 1;
