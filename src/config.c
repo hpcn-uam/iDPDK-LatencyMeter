@@ -111,7 +111,25 @@ static const char usage[] =
 "               is %u)                                                          \n"
 "           E = I/O TX lcore read burst size from input SW rings (default value \n"
 "               is %u)                                                          \n"
-"           F = I/O TX lcore write burst size to NIC TX (default value is %u)   \n";
+"           F = I/O TX lcore write burst size to NIC TX (default value is %u)   \n"
+
+"                                                                               \n"
+"Packet-Sending parameters:                                                     \n"
+"    --etho \"aa:bb:cc:dd:ee:ff\" : The ethernet origin MAC addr                \n"
+"    --ethd \"aa:bb:cc:dd:ee:ff\" : The ethernet destination MAC addr           \n"
+"    --ipo \"11.22.33.44\" : The ip origin addr                                 \n"
+"    --ipd \"11.22.33.44\" : The ip destination addr                            \n"
+"    --trainLen \"TRAIN LENGTH\" : Enables and sets the packet train length     \n"
+"    --trainTime \"TRAIN TIMEOUT\" : When to stop the measurment when all       \n"
+"                                    packets has been sent                      \n"
+"    --chksum : Each packet recalculate the IP/ICMP checksum                    \n"
+"    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
+;
+
+
+		//Auto fix ICMP packets
+		{"chksum", 0, 0, 0},
+		{"autoInc", 0, 0, 0},
 
 void
 app_print_usage(void)
