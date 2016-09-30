@@ -579,11 +579,6 @@ parse_arg_trainTime(const char *arg)
 		return -1;
 	}
 
-	if(latencyStats)
-		free(latencyStats);
-	
-	latencyStats = rte_calloc("latency_stats",trainTime,sizeof(struct pktLatencyStat),0);
-
 	return 0;
 }
 
