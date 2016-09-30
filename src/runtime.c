@@ -185,17 +185,28 @@ app_lcore_io_rx(
 			(uint16_t) bsz_rd);
 
 		if (unlikely(continueRX == 0)) {
-			printf("time to stop\n");
 			uint32_t k;
+			uint64_t totalBytes = 0;
+			hptl_t lastTime=0;
+			hptl_t firstTime=0;
 			for(k=0;k<trainLen;k++){
 				if(latencyStats[k].recved){
-					printf("%d: (r%lu:s%lu) Latency %lu ns\n",
+					printf("%d: (r%lu:s%lu) Latency %lu ns",
 						k+1,
 						latencyStats[k].recvTime,
 						latencyStats[k].sentTime,
 						latencyStats[k].recvTime - latencyStats[k].sentTime);
+					if(lastTime!=0){
+					printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
+					}else{
+						firstTime = latencyStats[k].recvTime;
+					}
+					lastTime = latencyStats[k].recvTime;
+					totalBytes += latencyStats[k].pktLen;
+					printf("\n");
 				}
 			}
+			printf("Mean-BandWidth %lf Gbps\n",(totalBytes/1000000000.)/( ((double)lastTime - firstTime) /1000000000.));
 			exit(0);
 		}
 
@@ -206,6 +217,7 @@ app_lcore_io_rx(
 		if(trainLen && (*(uint16_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+icmpStart+2+2)) == (*(uint16_t*)(icmppkt+icmpStart+2+2))){
 			latencyStats[counter].recvTime=hptl_get();
 			latencyStats[counter].sentTime = (*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])-8));
+			latencyStats[counter].pktLen=rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1]);
 			latencyStats[counter].recved=1;
 			++counter;
 		}
