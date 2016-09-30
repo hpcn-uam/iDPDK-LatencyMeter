@@ -126,11 +126,6 @@ static const char usage[] =
 "    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
 ;
 
-
-		//Auto fix ICMP packets
-		{"chksum", 0, 0, 0},
-		{"autoInc", 0, 0, 0},
-
 void
 app_print_usage(void)
 {
