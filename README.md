@@ -2,7 +2,6 @@ High Speed Latency-Metter using DPDK
 =================
 
 This application allows to measure the network's Latency and Bandwith.
-This a
 
 Clonning
 =================
@@ -22,10 +21,10 @@ git submodule update --init --recursive
 
 DPDK-Compilation
 =================
-The latest tested DPDK-repository with this application is included in the dpdk folder.
+The latest tested DPDK-repository with this application is included in the `dpdk` folder.
 Howerver, any other compatible-version could be used by exporting `RTE_SDK` variable.
 
-To compile the included DPDK-release, it is recomended to execute and follow the basic dpdk-setup script, example:
+To compile the included DPDK-release, it is recomended to execute and follow the basic `dpdk-setup.sh` script, example:
 
 ````
 cd dpdk
@@ -36,7 +35,7 @@ cd ..
 APP-Compilation
 =================
 The application is compiled automatically when executing one of the provided scripts.
-If you prefere to compile it manually, in the `src` folder there is a Makefile to do so.
+If you prefere to compile it manually, in the `src` folder there is a `Makefile` to do so.
 
 Execution
 =================
@@ -48,13 +47,13 @@ In `script` folder, there are some example scripts:
 Also, those scripts accept the following extra (optional) parameters:
 
 ````
-    --etho "aa:bb:cc:dd:ee:ff" : The ethernet origin MAC addr                
-    --ethd "aa:bb:cc:dd:ee:ff" : The ethernet destination MAC addr           
-    --ipo "11.22.33.44" : The ip origin addr                                 
-    --ipd "11.22.33.44" : The ip destination addr                            
-    --trainLen "TRAIN LENGTH" : Enables and sets the packet train length     
-    --trainTime "TRAIN TIMEOUT" : When to stop the measurment when all       
-                                    packets has been sent                      
-    --chksum : Each packet recalculate the IP/ICMP checksum                    
+    --etho "aa:bb:cc:dd:ee:ff" : The ethernet origin MAC addr
+    --ethd "aa:bb:cc:dd:ee:ff" : The ethernet destination MAC addr
+    --ipo "11.22.33.44" : The ip origin addr
+    --ipd "11.22.33.44" : The ip destination addr
+    --trainLen "TRAIN LENGTH" : Enables and sets the packet train length
+    --trainTime "TRAIN TIMEOUT" : When to stop the measurment when all
+                                  packets has been sent
+    --chksum : Each packet recalculate the IP/ICMP checksum
     --autoInc : Each packet autoincrements the ICMP's sequence number  
 ````
