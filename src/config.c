@@ -124,6 +124,7 @@ static const char usage[] =
 "                                    packets has been sent                      \n"
 "    --chksum : Each packet recalculate the IP/ICMP checksum                    \n"
 "    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
+"    --bw : Only measures bandwidth, but with higher resolution                 \n"
 ;
 
 void
@@ -505,6 +506,7 @@ parse_arg_bsz(const char *arg)
 extern uint8_t icmppkt [];
 extern int doChecksum;
 extern int autoIncNum;
+extern int bandWidthMeasure;
 extern unsigned long trainLen;
 extern unsigned long trainTime; //ms
 
@@ -604,12 +606,12 @@ app_parse_args(int argc, char **argv)
 	int option_index;
 	char *prgname = argv[0];
 	static struct option lgopts[] = {
-		//normal
+		//Classic parameters
 		{"rx", 1, 0, 0},
 		{"tx", 1, 0, 0},
 		{"rsz", 1, 0, 0},
 		{"bsz", 1, 0, 0},
-		//net config
+		//Net config
 		{"etho", 1, 0, 0},
 		{"ethd", 1, 0, 0},
 		{"ipo", 1, 0, 0},
@@ -620,6 +622,8 @@ app_parse_args(int argc, char **argv)
 		//Auto fix ICMP packets
 		{"chksum", 0, 0, 0},
 		{"autoInc", 0, 0, 0},
+		//Measurment kind
+		{"bw", 0, 0, 0},
 		//endlist
 		{NULL, 0, 0, 0}
 	};
@@ -722,6 +726,9 @@ app_parse_args(int argc, char **argv)
 			}
 			if (!strcmp(lgopts[option_index].name, "autoInc")) {
 				autoIncNum = 1;
+			}
+			if (!strcmp(lgopts[option_index].name, "bw")) {
+				bandWidthMeasure = 1;
 			}
 			break;
 

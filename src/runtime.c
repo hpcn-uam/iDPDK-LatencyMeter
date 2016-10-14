@@ -149,6 +149,7 @@ int icmppktlen = sizeof(icmppkt);
 
 int doChecksum = 0;
 int autoIncNum = 0;
+int bandWidthMeasure = 0;
 unsigned long trainLen = 1000;
 unsigned long trainTime = 5000; //ms
 
@@ -157,19 +158,13 @@ int continueRX = 1;
 struct pktLatencyStat * latencyStats = NULL;
 
 //#define QUEUE_STATS
+
 static inline void
 app_lcore_io_rx(
 	struct app_lcore_params_io *lp,
-	uint32_t n_workers,
-	uint32_t bsz_rd,
-	uint32_t bsz_wr,
-	uint8_t pos_lb)
+	uint32_t bsz_rd)
 {
 	uint32_t i;
-
-	(void)n_workers;
-	(void)bsz_wr;
-	(void)pos_lb;
 
 	static uint32_t counter=0;
 
@@ -222,6 +217,41 @@ app_lcore_io_rx(
 			++counter;
 		}
 
+#if APP_IO_RX_DROP_ALL_PACKETS
+		for (j = 0; j < n_mbufs; j ++) {
+			struct rte_mbuf *pkt = lp->rx.mbuf_in.array[j];
+			rte_pktmbuf_free(pkt);
+		}
+
+		continue;
+#endif
+
+	}
+}
+
+
+static inline void
+app_lcore_io_rx_bw(
+	struct app_lcore_params_io *lp,
+	uint32_t bsz_rd)
+{
+	uint32_t i;
+
+	for (i = 0; i < lp->rx.n_nic_queues; i ++) {
+		uint8_t port = lp->rx.nic_queues[i].port;
+		uint8_t queue = lp->rx.nic_queues[i].queue;
+		uint32_t n_mbufs, j;
+
+		n_mbufs = rte_eth_rx_burst(
+			port,
+			queue,
+			lp->rx.mbuf_in.array,
+			(uint16_t) bsz_rd);
+
+		if (unlikely(n_mbufs == 0)) {
+			continue;
+		}
+
 #if APP_STATS
 		lp->rx.nic_queues_iters[i] ++;
 		lp->rx.nic_queues_count[i] += n_mbufs;
@@ -234,18 +264,6 @@ app_lcore_io_rx(
 
 			start_ewr = lp->rx.start_ewr; end_ewr = lp->rx.end_ewr;
 
-			if(lp->rx.record)
-			{
-				fprintf(lp->rx.record,"%lu\t%lf\t%.1lf\t%u\n",
-				start_ewr.tv_sec,
-				(((stats.ibytes)+stats.ipackets*(/*4crc+8prelud+12ifg*/(8+12)))/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec))/1000000.))/(1000*1000*1000./8.),
-				(double)stats.ipackets/((((double)end_ewr.tv_sec * (double)1000000. + (double)end_ewr.tv_usec) - ((double)start_ewr.tv_sec * (double)1000000. + (double)start_ewr.tv_usec)) /(double)1000000.),
-				(uint32_t) stats.ierrors
-				);
-				fflush(lp->rx.record);
-			}
-			else
-			{
 #ifdef QUEUE_STATS
 			if(queue==0)
 			{
@@ -266,17 +284,16 @@ app_lcore_io_rx(
 				lp->rx.nic_queues_count[i]/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
 				);
 #endif
-			}
 			lp->rx.nic_queues_iters[i] = 0;
 			lp->rx.nic_queues_count[i] = 0;
 
 #ifdef QUEUE_STATS
-                       	if(queue==0)
+		if(queue==0)
 #endif
 			rte_eth_stats_reset (port);
 
 #ifdef QUEUE_STATS
-                  	if(queue==0)
+        if(queue==0)
 #endif
 			lp->rx.start_ewr = end_ewr; // Updating start
 		}
@@ -296,93 +313,121 @@ app_lcore_io_rx(
 
 static inline void
 app_lcore_io_tx(
+	struct app_lcore_params_io *lp)
+{
+	uint32_t i;
+
+	for (i = 0; i < lp->tx.n_nic_ports; i ++) {
+		uint8_t port = lp->tx.nic_ports[i];
+		uint32_t n_mbufs, n_pkts;
+
+		n_mbufs = 1;
+
+		struct rte_mbuf * tmpbuf = rte_ctrlmbuf_alloc(app.pools[0]) ;
+		if(!tmpbuf){
+			continue;
+		}
+
+		tmpbuf->pkt_len = icmppktlen;
+		tmpbuf->data_len = icmppktlen;
+		tmpbuf->port = port;
+		
+		if(autoIncNum){
+			(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
+		}
+
+		memcpy(rte_ctrlmbuf_data(tmpbuf),icmppkt,icmppktlen-8);
+		*((hptl_t*)(rte_ctrlmbuf_data(tmpbuf)+icmppktlen-8)) = hptl_get();
+
+		if(doChecksum){
+			uint16_t cksum;
+			cksum = rte_raw_cksum (rte_ctrlmbuf_data(tmpbuf)+icmpStart, icmppktlen-icmpStart);
+			*((uint16_t*)(rte_ctrlmbuf_data(tmpbuf)+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
+		}
+
+		n_pkts = rte_eth_tx_burst(
+			port,
+			0,
+			&tmpbuf,
+			n_mbufs);
+		
+		hptl_waitns(WAITTIME);
+
+		if (unlikely(n_pkts < n_mbufs)){
+			rte_ctrlmbuf_free(tmpbuf);
+		}else{
+			lp->tx.mbuf_out[port].n_mbufs++;
+			if(trainLen && lp->tx.mbuf_out[port].n_mbufs >= trainLen){
+				hptl_waitns(trainTime*1000000UL);
+				continueRX = 0;
+				hptl_waitns(trainTime*1000000UL);
+				exit(1);
+			}
+		}
+	}
+}
+
+static inline void
+app_lcore_io_tx_bw(
 	struct app_lcore_params_io *lp,
-	uint32_t n_workers,
-	uint32_t bsz_rd,
 	uint32_t bsz_wr)
 {
-	uint32_t worker;
-	
-	for (worker = 0; worker < n_workers; worker ++) {
-		uint32_t i;
+	uint32_t i;
+	uint32_t k;
 
-		for (i = 0; i < lp->tx.n_nic_ports; i ++) {
-			uint8_t port = lp->tx.nic_ports[i];
-			//struct rte_ring *ring = lp->tx.rings[port][worker];
-			uint32_t n_mbufs, n_pkts;
-			//int ret;
+	for (i = 0; i < lp->tx.n_nic_ports; i ++) {
+		uint8_t port = lp->tx.nic_ports[i];
+		uint32_t n_mbufs, n_pkts;
+		n_mbufs = bsz_wr;
 
-			//UNUSED -> uncoment :)
-			(void)bsz_rd;
-			(void)bsz_wr;
+		if(!rte_pktmbuf_alloc_bulk(app.pools[0],lp->tx.mbuf_out[port].array,bsz_wr)){
+			continue;
+		}
 
-			//n_mbufs = lp->tx.mbuf_out[port].n_mbufs;
-			/*ret = rte_ring_sc_dequeue_bulk(
-				ring,
-				(void **) &lp->tx.mbuf_out[port].array[n_mbufs],
-				bsz_rd);
-
-			if (unlikely(ret == -ENOENT)) {
-				continue;
-			}
-
-			n_mbufs += bsz_rd;*/
-
-			n_mbufs = 1;
-
-			struct rte_mbuf * tmpbuf = rte_ctrlmbuf_alloc(app.pools[0]) ;
-			if(!tmpbuf){
-				continue;
-			}
-
-			tmpbuf->pkt_len = icmppktlen;
-			tmpbuf->data_len = icmppktlen;
-			tmpbuf->port = port;
+		for (k = bsz_wr; k < n_mbufs; k ++) {
+			lp->tx.mbuf_out[port].array[k]->pkt_len = icmppktlen;
+			lp->tx.mbuf_out[port].array[k]->data_len = icmppktlen;
+			lp->tx.mbuf_out[port].array[k]->port = port;
 			
-			if(autoIncNum){
-				(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
+			//if(autoIncNum){
+			//	(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
+			//}
+
+			memcpy(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k]),icmppkt,icmppktlen-8);
+			//*((hptl_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmppktlen-8)) = hptl_get();
+
+			//if(doChecksum){
+			//	uint16_t cksum;
+			//	cksum = rte_raw_cksum (rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart, icmppktlen-icmpStart);
+			//	*((uint16_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
+			//}
+		}
+
+		n_pkts = rte_eth_tx_burst(
+			port,
+			0,
+			lp->tx.mbuf_out[port].array,
+			n_mbufs);
+		
+		//hptl_waitns(WAITTIME);
+
+		//if (unlikely(n_pkts < n_mbufs)){
+		//	rte_ctrlmbuf_free(tmpbuf);
+		//}else{
+		//	lp->tx.mbuf_out[port].n_mbufs++;
+		//	if(trainLen && lp->tx.mbuf_out[port].n_mbufs >= trainLen){
+		//		hptl_waitns(trainTime*1000000UL);
+		//		continueRX = 0;
+		//		hptl_waitns(trainTime*1000000UL);
+		//		exit(1);
+		//	}
+		//}
+
+		if (unlikely(n_pkts < n_mbufs)) {
+			for (k = n_pkts; k < n_mbufs; k ++) {
+				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
+				rte_pktmbuf_free(pkt_to_free);
 			}
-
-			memcpy(rte_ctrlmbuf_data(tmpbuf),icmppkt,icmppktlen-8);
-			*((hptl_t*)(rte_ctrlmbuf_data(tmpbuf)+icmppktlen-8)) = hptl_get();
-
-			if(doChecksum){
-				uint16_t cksum;
-				cksum = rte_raw_cksum (rte_ctrlmbuf_data(tmpbuf)+icmpStart, icmppktlen-icmpStart);
-				*((uint16_t*)(rte_ctrlmbuf_data(tmpbuf)+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
-			}
-
-			/*if (unlikely(n_mbufs < bsz_wr)) {
-				lp->tx.mbuf_out[port].n_mbufs = n_mbufs;
-				continue;
-			}*/
-
-			n_pkts = rte_eth_tx_burst(
-				port,
-				0,
-				&tmpbuf,
-				n_mbufs);
-			
-			hptl_waitns(WAITTIME);
-
-			if (unlikely(n_pkts < n_mbufs)){
-				rte_ctrlmbuf_free(tmpbuf);
-			}else{
-				lp->tx.mbuf_out[port].n_mbufs++;
-				if(trainLen && lp->tx.mbuf_out[port].n_mbufs >= trainLen){
-					hptl_waitns(trainTime*1000000UL);
-					continueRX = 0;
-					hptl_waitns(trainTime*1000000UL);
-					exit(1);
-				}
-			}
-			/*if (unlikely(n_pkts < n_mbufs)) {
-				uint32_t k;
-				for (k = n_pkts; k < n_mbufs; k ++) {
-					struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
-					rte_pktmbuf_free(pkt_to_free);
-				}
-			}*/
 		}
 	}
 }
@@ -427,26 +472,40 @@ app_lcore_main_loop_io(void)
 {
 	uint32_t lcore = rte_lcore_id();
 	struct app_lcore_params_io *lp = &app.lcore_params[lcore].io;
-	uint32_t n_workers = app_get_lcores_worker();
+	//uint32_t n_workers = app_get_lcores_worker();
 	uint64_t i = 0;
 
 	uint32_t bsz_rx_rd = app.burst_size_io_rx_read;
-	uint32_t bsz_rx_wr = app.burst_size_io_rx_write;
+	//uint32_t bsz_rx_wr = app.burst_size_io_rx_write;
 
-	uint8_t pos_lb = app.pos_lb;
+	//uint8_t pos_lb = app.pos_lb;
 
 	app_lcore_arp_tx_gratuitous(lp);
 
-	for ( ; ; ) {
-		if (likely(lp->rx.n_nic_queues > 0)) {
-			app_lcore_io_rx(lp, n_workers, bsz_rx_rd, bsz_rx_wr, pos_lb); 
-		}
+	if(bandWidthMeasure){ // only measure bw
+		for ( ; ; ) {
+			if (likely(lp->rx.n_nic_queues > 0)) {
+				app_lcore_io_rx_bw(lp, bsz_rx_rd); 
+			}
 
-		if (likely(lp->tx.n_nic_ports > 0)) {
-			app_lcore_io_tx(lp, 1, app.burst_size_io_tx_read, app.burst_size_io_tx_write); 
-		}
+			if (likely(lp->tx.n_nic_ports > 0)) {
+				app_lcore_io_tx_bw(lp, app.burst_size_io_tx_write); 
+			}
 
-		i ++;
+			i ++;
+		}
+	}else{  // measure bw & latency, priorizing latency
+		for ( ; ; ) {
+			if (likely(lp->rx.n_nic_queues > 0)) {
+				app_lcore_io_rx(lp, bsz_rx_rd); 
+			}
+
+			if (likely(lp->tx.n_nic_ports > 0)) {
+				app_lcore_io_tx(lp); 
+			}
+
+			i ++;
+		}
 	}
 }
 
