@@ -432,7 +432,7 @@ app_lcore_io_tx_bw(
 		//}
 
 		if (unlikely(n_pkts < n_mbufs)) {
-			printf("Errorcito\n");
+			//printf("Errorcito\n");
 			for (k = n_pkts; k < n_mbufs; k ++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 //				rte_pktmbuf_free(pkt_to_free);
