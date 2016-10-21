@@ -387,6 +387,10 @@ app_lcore_io_tx_bw(
 
 		for (k = 0; k < n_mbufs; k ++) {
 			lp->tx.mbuf_out[port].array[k] = rte_ctrlmbuf_alloc(app.pools[0]) ;
+			if(lp->tx.mbuf_out[port].array[k]==NULL){
+				n_mbufs=k;
+				break;
+			}
 
 			lp->tx.mbuf_out[port].array[k]->pkt_len = icmppktlen;
 			lp->tx.mbuf_out[port].array[k]->data_len = icmppktlen;
