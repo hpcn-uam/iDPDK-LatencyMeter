@@ -351,14 +351,14 @@ app_lcore_io_tx(
 			&tmpbuf,
 			n_mbufs);
 		
-		hptl_waitns(WAITTIME);
+		hptl_waitns(trainTime*1000000UL);
 
 		if (unlikely(n_pkts < n_mbufs)){
 			rte_ctrlmbuf_free(tmpbuf);
 		}else{
 			lp->tx.mbuf_out[port].n_mbufs++;
 			if(trainLen && lp->tx.mbuf_out[port].n_mbufs >= trainLen){
-				hptl_waitns(trainTime*1000000UL);
+				hptl_waitns(WAITTIME);
 				continueRX = 0;
 				hptl_waitns(trainTime*1000000UL);
 				exit(1);
