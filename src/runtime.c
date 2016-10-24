@@ -183,14 +183,17 @@ app_lcore_io_rx(
 		if (unlikely(continueRX == 0)) {
 			uint32_t k;
 			uint64_t totalBytes = 0;
-			hptl_t lastTime=0;
-			hptl_t firstTime=0;
+			hptl_t firstTime=0, lastTime=0;
 			uint64_t losses = 0;
+			uint64_t sumLatency = 0;
+
 			for(k=0;k<trainLen;k++){
 				if(latencyStats[k].recved){
+					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
 					printf("%d: Latency %lu ns",
 						k+1,
-						latencyStats[k].recvTime - latencyStats[k].sentTime);
+						currentLatency);
+						sumLatency += currentLatency; 
 					if(lastTime!=0){
 						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
 					}else{
@@ -204,6 +207,7 @@ app_lcore_io_rx(
 				}
 			}
 			printf("Mean-BandWidth %lf Gbps\n",(totalBytes/1000000000.)/( ((double)lastTime - firstTime) /1000000000.));
+			printf("Mean-Latency %lf ns\n", sumLatency/( ((double)trainLen - losses) ));
 
 			if(losses>0) {
 				printf("%ld Packets lost\n",losses);
