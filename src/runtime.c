@@ -187,13 +187,11 @@ app_lcore_io_rx(
 			hptl_t firstTime=0;
 			for(k=0;k<trainLen;k++){
 				if(latencyStats[k].recved){
-					printf("%d: (r%lu:s%lu) Latency %lu ns",
+					printf("%d: Latency %lu ns",
 						k+1,
-						latencyStats[k].recvTime,
-						latencyStats[k].sentTime,
 						latencyStats[k].recvTime - latencyStats[k].sentTime);
 					if(lastTime!=0){
-					printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
+						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
 					}else{
 						firstTime = latencyStats[k].recvTime;
 					}
