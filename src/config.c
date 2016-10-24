@@ -783,6 +783,12 @@ app_parse_args(int argc, char **argv)
 	if (optind >= 0)
 		argv[optind - 1] = prgname;
 
+	// Latency app arguments
+	if(trainLen == 0){ // activate bandwidth mode
+		printf("No trainLength set, activating --bw mode\n");
+		bandWidthMeasure = 1;
+	}
+
 	ret = optind - 1;
 	optind = 0; /* reset getopt lib */
 	return ret;
