@@ -361,7 +361,9 @@ app_lcore_io_tx(
 			&tmpbuf,
 			n_mbufs);
 		
-		hptl_waitns(trainSleep);
+		if(trainSleep){
+			hptl_waitns(trainSleep);
+		}
 
 		if (unlikely(n_pkts < n_mbufs)){
 			rte_ctrlmbuf_free(tmpbuf);
