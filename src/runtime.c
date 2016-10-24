@@ -150,7 +150,7 @@ int icmppktlen = 256;
 int doChecksum = 0;
 int autoIncNum = 0;
 int bandWidthMeasure = 0;
-unsigned long trainLen = 1000;
+unsigned long trainLen   = 0;
 unsigned long trainSleep = 0; //ns
 unsigned long waitTime = 10*1000*1000*1000UL; //ns
 
