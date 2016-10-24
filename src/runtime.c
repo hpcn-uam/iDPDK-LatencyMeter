@@ -201,6 +201,10 @@ app_lcore_io_rx(
 				}
 			}
 			printf("Mean-BandWidth %lf Gbps\n",(totalBytes/1000000000.)/( ((double)lastTime - firstTime) /1000000000.));
+
+			if(trainLen-k>0) {
+				printf("%ld Packets lost\n",trainLen-k);
+			}
 			exit(0);
 		}
 
