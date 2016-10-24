@@ -125,7 +125,6 @@
 #define APP_IO_TX_PREFETCH1(p)
 #endif
 
-#define WAITTIME 10000UL
 #define icmpStart (6+6+2+5*4)
 
 uint8_t arppkt []={
@@ -152,7 +151,8 @@ int doChecksum = 0;
 int autoIncNum = 0;
 int bandWidthMeasure = 0;
 unsigned long trainLen = 1000;
-unsigned long trainTime = 5000; //ms
+unsigned long trainSleep = 0; //ns
+unsigned long waitTime = 10*1000*1000*1000UL; //ns
 
 int continueRX = 1;
 
@@ -352,16 +352,16 @@ app_lcore_io_tx(
 			&tmpbuf,
 			n_mbufs);
 		
-		hptl_waitns(trainTime*1000000UL);
+		hptl_waitns(trainSleep);
 
 		if (unlikely(n_pkts < n_mbufs)){
 			rte_ctrlmbuf_free(tmpbuf);
 		}else{
 			lp->tx.mbuf_out[port].n_mbufs++;
 			if(trainLen && lp->tx.mbuf_out[port].n_mbufs >= trainLen){
-				hptl_waitns(WAITTIME);
+				hptl_waitns(waitTime);
 				continueRX = 0;
-				hptl_waitns(trainTime*1000000UL);
+				hptl_waitns(waitTime);
 				exit(1);
 			}
 		}

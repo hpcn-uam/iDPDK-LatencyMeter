@@ -120,7 +120,8 @@ static const char usage[] =
 "    --ipo \"11.22.33.44\" : The ip origin addr                                 \n"
 "    --ipd \"11.22.33.44\" : The ip destination addr                            \n"
 "    --trainLen \"TRAIN LENGTH\" : Enables and sets the packet train length     \n"
-"    --trainTime \"TRAIN TIMEOUT\" : When to stop the measurment when all       \n"
+"    --trainSleep \"TRAIN SLEEP\": Sleep in NS between packets                  \n"
+"    --waitTime \"WAIT TIMEOUT\" : Nanoseconds to stop the measurment when all  \n"
 "                                    packets has been sent                      \n"
 "    --chksum : Each packet recalculate the IP/ICMP checksum                    \n"
 "    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
@@ -508,7 +509,8 @@ extern int doChecksum;
 extern int autoIncNum;
 extern int bandWidthMeasure;
 extern unsigned long trainLen;
-extern unsigned long trainTime; //ms
+extern unsigned long trainSleep; //ns
+extern unsigned long waitTime;   //ns
 
 extern struct pktLatencyStat * latencyStats;
 
@@ -588,9 +590,19 @@ parse_arg_trainLen(const char *arg)
 }
 
 static int
-parse_arg_trainTime(const char *arg)
+parse_arg_trainSleep(const char *arg)
 {
-	if(sscanf(arg,"%lu", &trainTime)!=1){
+	if(sscanf(arg,"%lu", &trainSleep)!=1){
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
+parse_arg_waitTime(const char *arg)
+{
+	if(sscanf(arg,"%lu", &waitTime)!=1){
 		return -1;
 	}
 
@@ -618,7 +630,8 @@ app_parse_args(int argc, char **argv)
 		{"ipd", 1, 0, 0},
 		//Trains, if not set, permanent connection would be done
 		{"trainLen", 1, 0, 0},
-		{"trainTime", 1, 0, 0},
+		{"trainSleep", 1, 0, 0},
+		{"waitTime", 1, 0, 0},
 		//Auto fix ICMP packets
 		{"chksum", 0, 0, 0},
 		{"autoInc", 0, 0, 0},
@@ -714,10 +727,17 @@ app_parse_args(int argc, char **argv)
 					return -1;
 				}
 			}
-			if (!strcmp(lgopts[option_index].name, "trainTime")) {
-				ret = parse_arg_trainTime(optarg);
+			if (!strcmp(lgopts[option_index].name, "trainSleep")) {
+				ret = parse_arg_trainSleep(optarg);
 				if (ret) {
-					printf("Incorrect value for --trainTime argument (%s, error code: %d)\n", optarg, ret);
+					printf("Incorrect value for --trainSleep argument (%s, error code: %d)\n", optarg, ret);
+					return -1;
+				}
+			}
+			if (!strcmp(lgopts[option_index].name, "waitTime")) {
+				ret = parse_arg_waitTime(optarg);
+				if (ret) {
+					printf("Incorrect value for --waitTime argument (%s, error code: %d)\n", optarg, ret);
 					return -1;
 				}
 			}
