@@ -144,15 +144,15 @@ uint8_t icmppkt []={
 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35,
 0x36, 0x37
 };
-int icmparraylen = sizeof(icmppkt);
-int icmppktlen = 256;
+unsigned icmparraylen = sizeof(icmppkt);
+unsigned icmppktlen = sizeof(icmppkt);
 
 int doChecksum = 0;
 int autoIncNum = 0;
 int bandWidthMeasure = 0;
-unsigned long trainLen   = 0;
-unsigned long trainSleep = 0; //ns
-unsigned long waitTime = 10*1000*1000*1000UL; //ns
+uint64_t trainLen   = 0;
+uint64_t trainSleep = 0; //ns
+uint64_t waitTime = 10*1000*1000*1000UL; //ns
 
 int continueRX = 1;
 

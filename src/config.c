@@ -119,6 +119,7 @@ static const char usage[] =
 "    --ethd \"aa:bb:cc:dd:ee:ff\" : The ethernet destination MAC addr           \n"
 "    --ipo \"11.22.33.44\" : The ip origin addr                                 \n"
 "    --ipd \"11.22.33.44\" : The ip destination addr                            \n"
+"    --pktLen \"Packet LENGTH\" : Sets the size of each sent packet             \n"
 "    --trainLen \"TRAIN LENGTH\" : Enables and sets the packet train length     \n"
 "    --trainSleep \"TRAIN SLEEP\": Sleep in NS between packets                  \n"
 "    --waitTime \"WAIT TIMEOUT\" : Nanoseconds to stop the measurment when all  \n"
@@ -508,9 +509,10 @@ extern uint8_t icmppkt [];
 extern int doChecksum;
 extern int autoIncNum;
 extern int bandWidthMeasure;
-extern unsigned long trainLen;
-extern unsigned long trainSleep; //ns
-extern unsigned long waitTime;   //ns
+extern uint64_t trainLen;
+extern uint64_t trainSleep; //ns
+extern uint64_t waitTime;   //ns
+extern unsigned icmppktlen;
 
 extern struct pktLatencyStat * latencyStats;
 
@@ -575,6 +577,16 @@ parse_arg_ipd(const char *arg)
 }
 
 static int
+parse_arg_pktLen(const char *arg)
+{
+	if(sscanf(arg,"%u", &icmppktlen)!=1){
+		return -1;
+	}
+
+	return 0;
+}
+
+static int
 parse_arg_trainLen(const char *arg)
 {
 	if(sscanf(arg,"%lu", &trainLen)!=1){
@@ -628,6 +640,7 @@ app_parse_args(int argc, char **argv)
 		{"ethd", 1, 0, 0},
 		{"ipo", 1, 0, 0},
 		{"ipd", 1, 0, 0},
+		{"pktLen", 1, 0, 0},
 		//Trains, if not set, permanent connection would be done
 		{"trainLen", 1, 0, 0},
 		{"trainSleep", 1, 0, 0},
@@ -717,6 +730,13 @@ app_parse_args(int argc, char **argv)
 				ret = parse_arg_ipd(optarg);
 				if (ret) {
 					printf("Incorrect value for --ipd argument (%s, error code: %d)\n", optarg, ret);
+					return -1;
+				}
+			}
+			if (!strcmp(lgopts[option_index].name, "pktLen")) {
+				ret = parse_arg_pktLen(optarg);
+				if (ret) {
+					printf("Incorrect value for --pktLen argument (%s, error code: %d)\n", optarg, ret);
 					return -1;
 				}
 			}
