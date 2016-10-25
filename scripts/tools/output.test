@@ -1,0 +1,117 @@
+EAL: Detected 16 lcore(s)
+EAL: Probing VFIO support...
+PMD: bnxt_rte_pmd_init() called for (null)
+EAL: PCI device 0000:01:00.0 on NUMA socket 0
+EAL:   probe driver: 8086:10fb rte_ixgbe_pmd
+EAL: PCI device 0000:01:00.1 on NUMA socket 0
+EAL:   probe driver: 8086:10fb rte_ixgbe_pmd
+EAL: PCI device 0000:04:00.0 on NUMA socket 0
+EAL:   probe driver: 8086:1521 rte_igb_pmd
+EAL: PCI device 0000:04:00.1 on NUMA socket 0
+EAL:   probe driver: 8086:1521 rte_igb_pmd
+EAL: PCI device 0000:81:00.0 on NUMA socket 0
+EAL:   probe driver: 8086:1528 rte_ixgbe_pmd
+EAL: PCI device 0000:81:00.1 on NUMA socket 0
+EAL:   probe driver: 8086:1528 rte_ixgbe_pmd
+Creating the mbuf pool for socket 0 ...
+Initializing NIC port 0 ...
+Initializing NIC port 0 RX queue 0 ...
+Default ETHOrig set to: 0:1B:21:AD:A9:9CInitializing NIC port 1 ...
+Initializing NIC port 1 TX queue 0 ...
+Default ETHOrig set to: 0:1B:21:AD:A9:9D
+Checking link statusdone
+Port 0 Link Up - speed 10000 Mbps - full-duplex
+Port 1 Link Up - speed 10000 Mbps - full-duplex
+Initialization completed.
+NIC RX ports: 0 (0 )  ;
+I/O lcore 1 (socket 0): RX ports  (0, 0)  ; Output rings  ;
+
+NIC TX ports:  1  ;
+I/O lcore 3 (socket 0): Input rings per TX port  1 ()  ;
+Ring sizes: NIC RX = 1024; Worker in = 2048; Worker out = 1024; NIC TX = 1024;
+Burst sizes: I/O RX (rd = 144, wr = 144); Worker (rd = 144, wr = 144); I/O TX (rd = 144, wr = 144)
+Logical core 1 (I/O) main loop.
+Logical core 3 (I/O) main loop.
+1: Latency 6220 ns
+2: Latency 5150 ns insta-BandWidth 0.200000 Gbps
+3: Latency 5047 ns insta-BandWidth 0.500000 Gbps
+4: Latency 5224 ns insta-BandWidth 0.333333 Gbps
+5: Latency 4987 ns insta-BandWidth 0.500000 Gbps
+6: Latency 5074 ns insta-BandWidth 0.500000 Gbps
+7: Latency 4960 ns insta-BandWidth 0.500000 Gbps
+8: Latency 4726 ns insta-BandWidth 0.200000 Gbps
+9: Latency 5176 ns insta-BandWidth 0.250000 Gbps
+10: Latency 4890 ns insta-BandWidth 1.000000 Gbps
+11: Latency 5084 ns insta-BandWidth 0.333333 Gbps
+12: Latency 4960 ns insta-BandWidth 0.500000 Gbps
+13: Latency 5006 ns insta-BandWidth 0.500000 Gbps
+14: Latency 4813 ns insta-BandWidth 0.500000 Gbps
+15: Latency 4817 ns insta-BandWidth 0.500000 Gbps
+16: Latency 4923 ns insta-BandWidth 0.333333 Gbps
+17: Latency 4640 ns insta-BandWidth 1.000000 Gbps
+18: Latency 4863 ns insta-BandWidth 0.333333 Gbps
+19: Latency 5370 ns insta-BandWidth 0.250000 Gbps
+20: Latency 4756 ns insta-BandWidth 1.000000 Gbps
+21: Latency 4800 ns insta-BandWidth 0.333333 Gbps
+22: Latency 4887 ns insta-BandWidth 0.500000 Gbps
+23: Latency 4726 ns insta-BandWidth 0.333333 Gbps
+24: Latency 4670 ns insta-BandWidth 0.500000 Gbps
+25: Latency 4867 ns insta-BandWidth 0.333333 Gbps
+26: Latency 4874 ns insta-BandWidth 0.500000 Gbps
+27: Latency 4980 ns insta-BandWidth 0.333333 Gbps
+28: Latency 4940 ns insta-BandWidth 0.500000 Gbps
+29: Latency 4814 ns insta-BandWidth 0.500000 Gbps
+30: Latency 4916 ns insta-BandWidth 0.333333 Gbps
+31: Latency 5030 ns insta-BandWidth 0.500000 Gbps
+32: Latency 4907 ns insta-BandWidth 0.333333 Gbps
+33: Latency 4853 ns insta-BandWidth 0.500000 Gbps
+34: Latency 4976 ns insta-BandWidth 0.333333 Gbps
+35: Latency 4796 ns insta-BandWidth 0.500000 Gbps
+36: Latency 4940 ns insta-BandWidth 0.500000 Gbps
+37: Latency 5023 ns insta-BandWidth 0.333333 Gbps
+38: Latency 4760 ns insta-BandWidth 1.000000 Gbps
+39: Latency 4883 ns insta-BandWidth 0.333333 Gbps
+40: Latency 4990 ns insta-BandWidth 0.333333 Gbps
+41: Latency 4780 ns insta-BandWidth 1.000000 Gbps
+42: Latency 4766 ns insta-BandWidth 0.500000 Gbps
+43: Latency 4904 ns insta-BandWidth 0.333333 Gbps
+44: Latency 4993 ns insta-BandWidth 0.333333 Gbps
+45: Latency 4823 ns insta-BandWidth 1.000000 Gbps
+46: Latency 4873 ns insta-BandWidth 0.333333 Gbps
+47: Latency 4990 ns insta-BandWidth 0.333333 Gbps
+48: Latency 5103 ns insta-BandWidth 0.500000 Gbps
+49: Latency 4817 ns insta-BandWidth 0.500000 Gbps
+50: Latency 5053 ns insta-BandWidth 0.333333 Gbps
+51: Latency 5197 ns insta-BandWidth 0.500000 Gbps
+52: Latency 4883 ns insta-BandWidth 0.500000 Gbps
+53: Latency 4694 ns insta-BandWidth 1.000000 Gbps
+54: Latency 4707 ns insta-BandWidth 0.500000 Gbps
+55: Latency 4903 ns insta-BandWidth 0.166667 Gbps
+56: Latency 4930 ns insta-BandWidth 0.250000 Gbps
+57: Latency 5056 ns insta-BandWidth 0.333333 Gbps
+58: Latency 4757 ns insta-BandWidth 1.000000 Gbps
+59: Latency 4973 ns insta-BandWidth 0.250000 Gbps
+60: Latency 5076 ns insta-BandWidth 0.500000 Gbps
+61: Latency 4877 ns insta-BandWidth 0.500000 Gbps
+62: Latency 5043 ns insta-BandWidth 0.333333 Gbps
+63: Latency 5036 ns insta-BandWidth 0.500000 Gbps
+64: Latency 4867 ns insta-BandWidth 0.250000 Gbps
+65: Latency 5010 ns insta-BandWidth 0.200000 Gbps
+66: Latency 4850 ns insta-BandWidth 0.500000 Gbps
+67: Latency 4927 ns insta-BandWidth 0.500000 Gbps
+68: Latency 5353 ns insta-BandWidth 0.250000 Gbps
+69: Latency 4840 ns insta-BandWidth 1.000000 Gbps
+70: Latency 4893 ns insta-BandWidth 0.333333 Gbps
+71: Latency 4974 ns insta-BandWidth 0.200000 Gbps
+72: Latency 4953 ns insta-BandWidth 0.500000 Gbps
+73: Latency 4900 ns insta-BandWidth 0.500000 Gbps
+74: Latency 4767 ns insta-BandWidth 0.500000 Gbps
+75: Latency 4770 ns insta-BandWidth 0.500000 Gbps
+76: Latency 4690 ns insta-BandWidth 0.500000 Gbps
+77: Latency 4770 ns insta-BandWidth 0.200000 Gbps
+78: Latency 5233 ns insta-BandWidth 0.250000 Gbps
+79: Latency 5014 ns insta-BandWidth 1.000000 Gbps
+80: Latency 4854 ns insta-BandWidth 0.333333 Gbps
+Mean-BandWidth 0.392157 Gbps
+Mean-Latency 4940.212500 ns
+20 Packets lost
