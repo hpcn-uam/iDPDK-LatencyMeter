@@ -12,7 +12,7 @@ for waittime in $WAITTIME ; do
     for trainsleep in $TRAINSLEEPS ; do
         for trainlen in $TRAINLENS ; do
             for pktsize in $PKTSIZES ; do
-                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --waitTime $waittime --pktsize $pktsize
+                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --waitTime $waittime --pktLen $pktsize
             done
         done
     done
