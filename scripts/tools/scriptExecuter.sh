@@ -4,7 +4,7 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #Script to execute
-SCRIPT="../interface01.sh $@ 2>> stderr.trash"
+SCRIPT="$DIR/../interface01.sh $@ 2>> stderr.trash"
 
 #awk Script parse
 LOSSES=$($SCRIPT | grep lost | cut -f1 -d' ')
