@@ -11,8 +11,9 @@ WAITTIME="10000000000 1000000000"
 for waittime in $WAITTIME ; do
     for trainsleep in $TRAINSLEEPS ; do
         for trainlen in $TRAINLENS ; do
+            rm -f results_$waittime_$trainsleep_$trainlen.txt
             for pktsize in $PKTSIZES ; do
-                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --waitTime $waittime --pktLen $pktsize
+                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --waitTime $waittime --pktLen $pktsize | tee -a results_$waittime_$trainsleep_$trainlen.txt
             done
         done
     done
