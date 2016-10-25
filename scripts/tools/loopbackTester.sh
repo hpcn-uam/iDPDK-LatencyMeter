@@ -13,6 +13,7 @@ for waittime in $WAITTIME ; do
         for trainlen in $TRAINLENS ; do
             rm -f results_$waittime_$trainsleep_$trainlen.txt
             for pktsize in $PKTSIZES ; do
+                echo "Test $waittime $trainsleep $trainlen $pktsize"
                 $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --waitTime $waittime --pktLen $pktsize | tee -a results_$waittime_$trainsleep_$trainlen.txt
             done
         done
