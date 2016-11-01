@@ -456,38 +456,22 @@ app_lcore_io_tx_bw(
 
 			start_ewr = lp->tx.start_ewr; end_ewr = lp->tx.end_ewr;
 
-#ifdef QUEUE_STATS
 			if(queue==0)
 			{
-#endif
-			printf("NIC TX port %u: drop ratio = %.2f (%u/%u) speed: %lf Gbps (%.1lf pkts/s)\n",
-				(unsigned) port,
-				(double) stats.oerrors / (double) (stats.oerrors + stats.opackets),
-				(uint32_t) stats.opackets, (uint32_t) stats.oerrors,
-				(((stats.obytes)+stats.opackets*(/*4crc+8prelud+12ifg*/(8+12)))/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec))/1000000.))/(1000*1000*1000./8.),
-				stats.opackets/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
-				);
-#ifdef QUEUE_STATS
+				printf("NIC TX port %u: drop ratio = %.2f (%u/%u) speed: %lf Gbps (%.1lf pkts/s)\n",
+					(unsigned) port,
+					(double) stats.oerrors / (double) (stats.oerrors + stats.opackets),
+					(uint32_t) stats.opackets, (uint32_t) stats.oerrors,
+					(((stats.obytes)+stats.opackets*(/*4crc+8prelud+12ifg*/(8+12)))/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec))/1000000.))/(1000*1000*1000./8.),
+					stats.opackets/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
+					);
+
+				rte_eth_stats_reset (port);
+				lp->tx.start_ewr = end_ewr; // Updating start
 			}
-			/*printf("NIC TX port %u:%u: drop ratio = %.2f (%u/%u) speed %.1lf pkts/s\n",
-				(unsigned) port, queue,
-				(double) stats.oerrors / (double) (stats.oerrors + lp->tx.nic_queues_count[i]),
-				(uint32_t) lp->tx.nic_queues_count[i], (uint32_t) stats.oerrors,
-				lp->tx.nic_queues_count[i]/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
-				);*/
-#endif
+
 			lp->tx.nic_queues_iters[i] = 0;
 			lp->tx.nic_queues_count[i] = 0;
-
-#ifdef QUEUE_STATS
-		if(queue==0)
-#endif
-			rte_eth_stats_reset (port);
-
-#ifdef QUEUE_STATS
-        if(queue==0)
-#endif
-			lp->tx.start_ewr = end_ewr; // Updating start
 		}
 #endif
 
