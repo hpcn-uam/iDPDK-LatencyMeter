@@ -20,7 +20,7 @@ make -j5 && \
         # c = numero de procesadores
         # n = numero de canales de memoria
         # --rx "(PORT, QUEUE, LCORE), ..." : List of NIC RX ports and queues       
-        # tx "(PORT, LCORE), ..." : List of NIC TX ports handled by the I/O TX   
+        # tx "(PORT, QUEUE, LCORE), ..." : List of NIC TX ports handled by the I/O TX   
         # w "LCORE, ..." : List of the worker lcores
         # OPTIONAL:
         # rsz "A, B, C, D" : Ring sizes
@@ -46,7 +46,7 @@ make -j5 && \
         #       is 144)
         #   F = I/O TX lcore write burst size to NIC TX (default value is 144)   
 \
-        build/app/hpcn_n2d -c F -n 2 -- --rx "(0,0,1)" --tx "(1,3)" \
+        build/app/hpcn_latency -c F -n 2 -- --rx "(0,0,1)" --tx "(1,0,3)" \
                 --rsz "1024, 2048, 1024, 1024" \
                 --bsz "(144, 144), (144, 144), (144, 144)" \
 		$@

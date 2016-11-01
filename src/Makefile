@@ -39,7 +39,7 @@ RTE_TARGET ?= x86_64-default-linuxapp-gcc
 include $(RTE_SDK)/mk/rte.vars.mk
 
 # binary name
-APP = hpcn_n2d
+APP = hpcn_latency
 
 # all source are stored in SRCS-y
 SRCS-y := main.c config.c init.c runtime.c hptl.c

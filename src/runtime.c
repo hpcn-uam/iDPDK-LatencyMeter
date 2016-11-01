@@ -327,8 +327,9 @@ app_lcore_io_tx(
 {
 	uint32_t i;
 
-	for (i = 0; i < lp->tx.n_nic_ports; i ++) {
-		uint8_t port = lp->tx.nic_ports[i];
+	for (i = 0; i < lp->tx.n_nic_queues; i ++) {
+		uint8_t port = lp->tx.nic_queues[i].port;
+		uint8_t queue = lp->tx.nic_queues[i].queue;
 		uint32_t n_mbufs, n_pkts;
 
 		n_mbufs = 1;
@@ -357,7 +358,7 @@ app_lcore_io_tx(
 
 		n_pkts = rte_eth_tx_burst(
 			port,
-			0,
+			queue,
 			&tmpbuf,
 			n_mbufs);
 		
@@ -387,8 +388,9 @@ app_lcore_io_tx_bw(
 	uint32_t i;
 	uint32_t k;
 
-	for (i = 0; i < lp->tx.n_nic_ports; i ++) {
-		uint8_t port = lp->tx.nic_ports[i];
+	for (i = 0; i < lp->tx.n_nic_queues; i ++) {
+		uint8_t port = lp->tx.nic_queues[i].port;
+		uint8_t queue = lp->tx.nic_queues[i].queue;
 		uint32_t n_mbufs, n_pkts;
 		n_mbufs = bsz_wr;
 
@@ -424,7 +426,7 @@ app_lcore_io_tx_bw(
 
 		n_pkts = rte_eth_tx_burst(
 			port,
-			0,
+			queue,
 			lp->tx.mbuf_out[port].array,
 			n_mbufs);
 		
@@ -457,8 +459,9 @@ static void
 app_lcore_arp_tx_gratuitous(struct app_lcore_params_io *lp)
 {
 	uint32_t i;
-	for (i = 0; i < lp->tx.n_nic_ports; i ++) {
-		uint8_t port = lp->tx.nic_ports[i];
+	for (i = 0; i < lp->tx.n_nic_queues; i ++) {
+		uint8_t port = lp->tx.nic_queues[i].port;
+		uint8_t queue = lp->tx.nic_queues[i].queue;
 
 		struct rte_mbuf * tmpbuf = rte_ctrlmbuf_alloc(app.pools[0]) ;
 		if(!tmpbuf){
@@ -478,7 +481,7 @@ app_lcore_arp_tx_gratuitous(struct app_lcore_params_io *lp)
 
 		if (!rte_eth_tx_burst(
 				port,
-				0,
+				queue,
 				&tmpbuf,
 				1))
 			{
@@ -509,7 +512,7 @@ app_lcore_main_loop_io(void)
 				app_lcore_io_rx_bw(lp, bsz_rx_rd); 
 			}
 
-			if (likely(lp->tx.n_nic_ports > 0)) {
+			if (likely(lp->tx.n_nic_queues > 0)) {
 				app_lcore_io_tx_bw(lp, app.burst_size_io_tx_write); 
 			}
 
@@ -521,7 +524,7 @@ app_lcore_main_loop_io(void)
 				app_lcore_io_rx(lp, bsz_rx_rd); 
 			}
 
-			if (likely(lp->tx.n_nic_ports > 0)) {
+			if (likely(lp->tx.n_nic_queues > 0)) {
 				app_lcore_io_tx(lp); 
 			}
 

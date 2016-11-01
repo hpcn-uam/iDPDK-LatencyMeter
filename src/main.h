@@ -69,6 +69,10 @@
 #define APP_MAX_NIC_RX_QUEUES_PER_IO_LCORE 16
 #endif
 
+#ifndef APP_MAX_NIC_TX_QUEUES_PER_IO_LCORE
+#define APP_MAX_NIC_TX_QUEUES_PER_IO_LCORE 16
+#endif
+
 #ifndef APP_MAX_NIC_TX_PORTS_PER_IO_LCORE
 #define APP_MAX_NIC_TX_PORTS_PER_IO_LCORE 16
 #endif
@@ -250,8 +254,6 @@ struct app_lcore_params_io {
 		} nic_queues[APP_MAX_NIC_RX_QUEUES_PER_IO_LCORE];
 		uint32_t n_nic_queues;
 
-		FILE * record;
-
 		/* Rings */
 		struct rte_ring *rings[APP_MAX_WORKER_LCORES];
 		uint32_t n_rings;
@@ -277,8 +279,11 @@ struct app_lcore_params_io {
 		struct rte_ring *rings[APP_MAX_NIC_PORTS][APP_MAX_WORKER_LCORES];
 
 		/* NIC */
-		uint8_t nic_ports[APP_MAX_NIC_TX_PORTS_PER_IO_LCORE];
-		uint32_t n_nic_ports;
+		struct {
+			uint8_t port;
+			uint8_t queue;
+		} nic_queues[APP_MAX_NIC_TX_PORTS_PER_IO_LCORE];
+		uint32_t n_nic_queues;
 
 		/* Internal buffers */
 		struct app_mbuf_array mbuf_out[APP_MAX_NIC_TX_PORTS_PER_IO_LCORE];
@@ -335,7 +340,7 @@ struct app_params {
 
 	/* NIC */
 	uint8_t nic_rx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_RX_QUEUES_PER_NIC_PORT];
-	uint8_t nic_tx_port_mask[APP_MAX_NIC_PORTS];
+	uint8_t nic_tx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_TX_QUEUES_PER_NIC_PORT];
 
 	/* mbuf pools */
 	struct rte_mempool *pools[APP_MAX_SOCKETS];
@@ -378,8 +383,9 @@ void app_init(void);
 int app_lcore_main_loop(void *arg);
 
 int app_get_nic_rx_queues_per_port(uint8_t port);
+int app_get_nic_tx_queues_per_port(uint8_t port);
 int app_get_lcore_for_nic_rx(uint8_t port, uint8_t queue, uint32_t *lcore_out);
-int app_get_lcore_for_nic_tx(uint8_t port, uint32_t *lcore_out);
+int app_get_lcore_for_nic_tx(uint8_t port, uint8_t queue, uint32_t *lcore_out);
 int app_is_socket_used(uint32_t socket);
 uint32_t app_get_lcores_io_rx(void);
 uint32_t app_get_lcores_worker(void);

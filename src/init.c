@@ -180,7 +180,6 @@ static void
 app_init_rings_rx(void)
 {
 	unsigned lcore;
-	char record_File_tmp [512];
 
 	/* Initialize the rings for the RX side */
 	for (lcore = 0; lcore < APP_MAX_LCORES; lcore ++) {
@@ -190,21 +189,6 @@ app_init_rings_rx(void)
 		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) ||
 		    (lp_io->rx.n_nic_queues == 0)) {
 			continue;
-		}
-
-		if(record_File[0])
-		{
-			gettimeofday(&lp_io->rx.end_ewr, NULL);
-			sprintf(record_File_tmp,"%s/TimeSeries_Port%d_%lu.txt",record_File,lp_io->rx.nic_queues[0].port,lp_io->rx.end_ewr.tv_sec);
-			lp_io->rx.record=fopen(record_File_tmp,"w+");
-			if(lp_io->rx.record==NULL)
-			{
-				perror("record file");
-				exit(-1);
-			}
-		}else
-		{
-			lp_io->rx.record=NULL;
 		}
 
 		socket_io = rte_lcore_to_socket_id(lcore);
@@ -291,12 +275,12 @@ app_init_rings_tx(void)
 			struct rte_ring *ring;
 			uint32_t socket_io, lcore_io;
 
-			if (app.nic_tx_port_mask[port] == 0) {
+			if (app_get_nic_tx_queues_per_port(port) == 0) {
 				continue;
 			}
 
-			if (app_get_lcore_for_nic_tx((uint8_t) port, &lcore_io) < 0) {
-				rte_panic("Algorithmic error (no I/O core to handle TX of port %u)\n",
+			if (app_get_lcore_for_nic_tx((uint8_t) port, 0, &lcore_io) < 0) { //TODO check other queues
+				rte_panic("Algorithmic error (no I/O core to handle TX of port %u and queue 0)\n",
 					port);
 			}
 
@@ -321,27 +305,6 @@ app_init_rings_tx(void)
 			lp_io->tx.rings[port][lp_worker->worker_id] = ring;
 		}
 	}
-
-	for (lcore = 0; lcore < APP_MAX_LCORES; lcore ++) {
-		struct app_lcore_params_io *lp_io = &app.lcore_params[lcore].io;
-		unsigned i;
-
-		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) ||
-		    (lp_io->tx.n_nic_ports == 0)) {
-			continue;
-		}
-
-		for (i = 0; i < lp_io->tx.n_nic_ports; i ++){
-			unsigned port, j;
-
-			port = lp_io->tx.nic_ports[i];
-			for (j = 0; j < app_get_lcores_worker(); j ++) {
-				if (lp_io->tx.rings[port][j] == NULL) {
-					rte_panic("Algorithmic error (I/O TX rings)\n");
-				}
-			}
-		}
-	}
 }
 
 /* Check the link status of all ports in up to 9s, and print them finally */
@@ -362,7 +325,7 @@ check_all_ports_link_status(uint8_t port_num, uint32_t port_mask)
 			if ((port_mask & (1 << portid)) == 0)
 				continue;
 			n_rx_queues = app_get_nic_rx_queues_per_port(portid);
-			n_tx_queues = app.nic_tx_port_mask[portid];
+			n_tx_queues = app_get_nic_tx_queues_per_port(portid);
 			if ((n_rx_queues == 0) && (n_tx_queues == 0))
 				continue;
 			memset(&link, 0, sizeof(link));
@@ -423,7 +386,7 @@ app_init_nics(void)
 		struct rte_mempool *pool;
 
 		n_rx_queues = app_get_nic_rx_queues_per_port(port);
-		n_tx_queues = app.nic_tx_port_mask[port];
+		n_tx_queues = app_get_nic_tx_queues_per_port(port);
 
 		if ((n_rx_queues == 0) && (n_tx_queues == 0)) {
 			continue;
@@ -470,20 +433,27 @@ app_init_nics(void)
 		}
 
 		/* Init TX queues */
-		if (app.nic_tx_port_mask[port] == 1) {
-			app_get_lcore_for_nic_tx(port, &lcore);
+		for (queue = 0; queue < APP_MAX_TX_QUEUES_PER_NIC_PORT; queue ++) {
+			if (app.nic_tx_queue_mask[port][queue] == 0) {
+				continue;
+			}
+
+			app_get_lcore_for_nic_tx(port, queue, &lcore);
 			socket = rte_lcore_to_socket_id(lcore);
-			printf("Initializing NIC port %u TX queue 0 ...\n",
-				(unsigned) port);
+
+			printf("Initializing NIC port %u TX queue %u ...\n",
+				(unsigned) port,
+				(unsigned) queue);
 			ret = rte_eth_tx_queue_setup(
 				port,
-				0,
+				queue,
 				(uint16_t) app.nic_tx_ring_size,
 				socket,
 				&tx_conf);
 			if (ret < 0) {
-				rte_panic("Cannot init TX queue 0 for port %d (%d)\n",
-					port,
+				rte_panic("Cannot init TX queue %u for port %u (%d)\n",
+					(unsigned) queue,
+					(unsigned) port,
 					ret);
 			}
 		}

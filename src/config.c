@@ -79,13 +79,13 @@ struct app_params app;
 
 static const char usage[] =
 "                                                                               \n"
-"    load_balancer <EAL PARAMS> -- <APP PARAMS>                                 \n"
+"    hpcn_latency <EAL PARAMS> -- <APP PARAMS>                                  \n"
 "                                                                               \n"
 "Application manadatory parameters:                                             \n"
 "    --rx \"(PORT, QUEUE, LCORE), ...\" : List of NIC RX ports and queues       \n"
 "           handled by the I/O RX lcores                                        \n"
-"    --tx \"(PORT, LCORE), ...\" : List of NIC TX ports handled by the I/O TX   \n"
-"           lcores                                                              \n"
+"    --tx \"(PORT, QUEUE, LCORE), ...\" : List of NIC TX ports and queues       \n"
+"           handled by the I/O TX lcores                                        \n"
 "    --w \"LCORE, ...\" : List of the worker lcores                             \n"
 
 "                                                                               \n"
@@ -291,22 +291,22 @@ parse_arg_tx(const char *arg)
 	n_tuples = 0;
 	while ((p = strchr(p0,'(')) != NULL) {
 		struct app_lcore_params *lp;
-		uint32_t port, lcore, i;
+		uint32_t port, queue, lcore, i;
 
 		p0 = strchr(p++, ')');
 		if ((p0 == NULL) ||
-		    (str_to_unsigned_vals(p, p0 - p, ',', 2, &port, &lcore) !=  2)) {
+		    (str_to_unsigned_vals(p, p0 - p, ',', 3, &port, &queue, &lcore) !=  3)) {
 			return -2;
 		}
 
 		/* Enable port and queue for later initialization */
-		if (port >= APP_MAX_NIC_PORTS) {
+		if ((port >= APP_MAX_NIC_PORTS) || (queue >= APP_MAX_TX_QUEUES_PER_NIC_PORT)) {
 			return -3;
 		}
-		if (app.nic_tx_port_mask[port] != 0) {
+		if (app.nic_tx_queue_mask[port][queue] != 0) {
 			return -4;
 		}
-		app.nic_tx_port_mask[port] = 1;
+		app.nic_tx_queue_mask[port][queue] = 1;
 
 		/* Check and assign (port, queue) to I/O lcore */
 		if (rte_lcore_is_enabled(lcore) == 0) {
@@ -321,16 +321,18 @@ parse_arg_tx(const char *arg)
 			return -7;
 		}
 		lp->type = e_APP_LCORE_IO;
-		for (i = 0; i < lp->io.tx.n_nic_ports; i ++) {
-			if (lp->io.tx.nic_ports[i] == port) {
+		for (i = 0; i < lp->io.tx.n_nic_queues; i ++) {
+			if ((lp->io.tx.nic_queues[i].port == port) &&
+			    (lp->io.tx.nic_queues[i].queue == queue)) {
 				return -8;
 			}
 		}
-		if (lp->io.tx.n_nic_ports >= APP_MAX_NIC_TX_PORTS_PER_IO_LCORE) {
+		if (lp->io.tx.n_nic_queues >= APP_MAX_NIC_TX_QUEUES_PER_IO_LCORE) {
 			return -9;
 		}
-		lp->io.tx.nic_ports[lp->io.tx.n_nic_ports] = (uint8_t) port;
-		lp->io.tx.n_nic_ports ++;
+		lp->io.tx.nic_queues[lp->io.tx.n_nic_queues].port = (uint8_t) port;
+		lp->io.tx.nic_queues[lp->io.tx.n_nic_queues].queue = (uint8_t) queue;
+		lp->io.tx.n_nic_queues ++;
 
 		n_tuples ++;
 		if (n_tuples > APP_ARG_TX_MAX_TUPLES) {
@@ -340,72 +342,6 @@ parse_arg_tx(const char *arg)
 
 	if (n_tuples == 0) {
 		return -11;
-	}
-
-	return 0;
-}
-
-#ifndef APP_ARG_W_MAX_CHARS
-#define APP_ARG_W_MAX_CHARS     4096
-#endif
-
-#ifndef APP_ARG_W_MAX_TUPLES
-#define APP_ARG_W_MAX_TUPLES    APP_MAX_WORKER_LCORES
-#endif
-
-static int
-parse_arg_w(const char *arg)
-{
-	const char *p = arg;
-	uint32_t n_tuples;
-
-	if (strnlen(arg, APP_ARG_W_MAX_CHARS + 1) == APP_ARG_W_MAX_CHARS + 1) {
-		return -1;
-	}
-
-	n_tuples = 0;
-	while (*p != 0) {
-		struct app_lcore_params *lp;
-		uint32_t lcore;
-
-		errno = 0;
-		lcore = strtoul(p, NULL, 0);
-		if ((errno != 0)) {
-			return -2;
-		}
-
-		/* Check and enable worker lcore */
-		if (rte_lcore_is_enabled(lcore) == 0) {
-			return -3;
-		}
-
-		if (lcore >= APP_MAX_LCORES) {
-			return -4;
-		}
-		lp = &app.lcore_params[lcore];
-		if (lp->type == e_APP_LCORE_IO) {
-			return -5;
-		}
-		lp->type = e_APP_LCORE_WORKER;
-
-		n_tuples ++;
-		if (n_tuples > APP_ARG_W_MAX_TUPLES) {
-			return -6;
-		}
-
-		p = strchr(p, ',');
-		if (p == NULL) {
-			break;
-		}
-		p ++;
-	}
-
-	if (n_tuples == 0) {
-		return -7;
-	}
-
-	if ((n_tuples & (n_tuples - 1)) != 0) {
-		return -8;
 	}
 
 	return 0;
@@ -682,13 +618,6 @@ app_parse_args(int argc, char **argv)
 					return -1;
 				}
 			}
-			if (!strcmp(lgopts[option_index].name, "w")) {
-				ret = parse_arg_w(optarg);
-				if (ret) {
-					printf("Incorrect value for --w argument (%d)\n", ret);
-					return -1;
-				}
-			}
 			if (!strcmp(lgopts[option_index].name, "rsz")) {
 				arg_rsz = 1;
 				ret = parse_arg_rsz(optarg);
@@ -834,6 +763,25 @@ app_get_nic_rx_queues_per_port(uint8_t port)
 }
 
 int
+app_get_nic_tx_queues_per_port(uint8_t port)
+{
+	uint32_t i, count;
+
+	if (port >= APP_MAX_NIC_PORTS) {
+		return -1;
+	}
+
+	count = 0;
+	for (i = 0; i < APP_MAX_TX_QUEUES_PER_NIC_PORT; i ++) {
+		if (app.nic_tx_queue_mask[port][i] == 1) {
+			count ++;
+		}
+	}
+
+	return count;
+}
+
+int
 app_get_lcore_for_nic_rx(uint8_t port, uint8_t queue, uint32_t *lcore_out)
 {
 	uint32_t lcore;
@@ -858,8 +806,9 @@ app_get_lcore_for_nic_rx(uint8_t port, uint8_t queue, uint32_t *lcore_out)
 	return -1;
 }
 
+
 int
-app_get_lcore_for_nic_tx(uint8_t port, uint32_t *lcore_out)
+app_get_lcore_for_nic_tx(uint8_t port, uint8_t queue, uint32_t *lcore_out)
 {
 	uint32_t lcore;
 
@@ -871,8 +820,9 @@ app_get_lcore_for_nic_tx(uint8_t port, uint32_t *lcore_out)
 			continue;
 		}
 
-		for (i = 0; i < lp->tx.n_nic_ports; i ++) {
-			if (lp->tx.nic_ports[i] == port) {
+		for (i = 0; i < lp->tx.n_nic_queues; i ++) {
+			if ((lp->tx.nic_queues[i].port == port) &&
+			    (lp->tx.nic_queues[i].queue == queue)) {
 				*lcore_out = lcore;
 				return 0;
 			}
@@ -945,7 +895,7 @@ app_get_lcores_worker(void)
 void
 app_print_params(void)
 {
-	unsigned port, queue, lcore, i, j;
+	unsigned port, queue, lcore, i/*, j*/;
 
 	/* Print NIC RX configuration */
 	printf("NIC RX ports: ");
@@ -983,94 +933,45 @@ app_print_params(void)
 				(unsigned) lp->rx.nic_queues[i].port,
 				(unsigned) lp->rx.nic_queues[i].queue);
 		}
-		printf("; ");
-
-		printf("Output rings  ");
-		for (i = 0; i < lp->rx.n_rings; i ++) {
-			printf("%p  ", lp->rx.rings[i]);
-		}
 		printf(";\n");
 	}
 
-	/* Print worker lcore RX params */
-	for (lcore = 0; lcore < APP_MAX_LCORES; lcore ++) {
-		struct app_lcore_params_worker *lp = &app.lcore_params[lcore].worker;
+	/* Print NIC TX configuration */
+	printf("NIC TX ports: ");
+	for (port = 0; port < APP_MAX_NIC_PORTS; port ++) {
+		uint32_t n_tx_queues = app_get_nic_tx_queues_per_port((uint8_t) port);
 
-		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
+		if (n_tx_queues == 0) {
 			continue;
 		}
 
-		printf("Worker lcore %u (socket %u) ID %u: ",
-			lcore,
-			rte_lcore_to_socket_id(lcore),
-			(unsigned)lp->worker_id);
-
-		printf("Input rings  ");
-		for (i = 0; i < lp->n_rings_in; i ++) {
-			printf("%p  ", lp->rings_in[i]);
+		printf("%u (", port);
+		for (queue = 0; queue < APP_MAX_TX_QUEUES_PER_NIC_PORT; queue ++) {
+			if (app.nic_tx_queue_mask[port][queue] == 1) {
+				printf("%u ", queue);
+			}
 		}
-
-		printf(";\n");
-	}
-
-	printf("\n");
-
-	/* Print NIC TX configuration */
-	printf("NIC TX ports:  ");
-	for (port = 0; port < APP_MAX_NIC_PORTS; port ++) {
-		if (app.nic_tx_port_mask[port] == 1) {
-			printf("%u  ", port);
-		}
+		printf(")  ");
 	}
 	printf(";\n");
 
-	/* Print I/O TX lcore params */
+	/* Print I/O lcore TX params */
 	for (lcore = 0; lcore < APP_MAX_LCORES; lcore ++) {
 		struct app_lcore_params_io *lp = &app.lcore_params[lcore].io;
-		uint32_t n_workers = app_get_lcores_worker();
 
 		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) ||
-		     (lp->tx.n_nic_ports == 0)) {
+		    (lp->tx.n_nic_queues == 0)) {
 			continue;
 		}
 
 		printf("I/O lcore %u (socket %u): ", lcore, rte_lcore_to_socket_id(lcore));
 
-		printf("Input rings per TX port  ");
-		for (i = 0; i < lp->tx.n_nic_ports; i ++) {
-			port = lp->tx.nic_ports[i];
-
-			printf("%u (", port);
-			for (j = 0; j < n_workers; j ++) {
-				printf("%p  ", lp->tx.rings[port][j]);
-			}
-			printf(")  ");
-
+		printf("TX ports  ");
+		for (i = 0; i < lp->tx.n_nic_queues; i ++) {
+			printf("(%u, %u)  ",
+				(unsigned) lp->tx.nic_queues[i].port,
+				(unsigned) lp->tx.nic_queues[i].queue);
 		}
-
-		printf(";\n");
-	}
-
-	/* Print worker lcore TX params */
-	for (lcore = 0; lcore < APP_MAX_LCORES; lcore ++) {
-		struct app_lcore_params_worker *lp = &app.lcore_params[lcore].worker;
-
-		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
-			continue;
-		}
-
-		printf("Worker lcore %u (socket %u) ID %u: \n",
-			lcore,
-			rte_lcore_to_socket_id(lcore),
-			(unsigned)lp->worker_id);
-
-		printf("Output rings per TX port  ");
-		for (port = 0; port < APP_MAX_NIC_PORTS; port ++) {
-			if (lp->rings_out[port] != NULL) {
-				printf("%u (%p)  ", port, lp->rings_out[port]);
-			}
-		}
-
 		printf(";\n");
 	}
 
