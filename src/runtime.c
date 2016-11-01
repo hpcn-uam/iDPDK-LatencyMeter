@@ -458,7 +458,7 @@ app_lcore_io_tx_bw(
 
 			if(queue==0)
 			{
-				printf("NIC TX port %u: drop ratio = %.2f (%u/%u) usefull-speed: %lf Gbps, real-speed: %lf Gbps (%.1lf pkts/s)\n",
+				printf("NIC TX port %u: drop ratio = %.2f (%u/%u) usefull-speed: %lf Gbps, link-speed: %lf Gbps (%.1lf pkts/s)\n",
 					(unsigned) port,
 					(double) stats.oerrors / (double) (stats.oerrors + stats.opackets),
 					(uint32_t) stats.opackets, (uint32_t) stats.oerrors,
