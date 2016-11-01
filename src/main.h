@@ -94,7 +94,7 @@
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_BUFFERS
-#define APP_DEFAULT_MEMPOOL_BUFFERS   8192 // * 16 * 2
+#define APP_DEFAULT_MEMPOOL_BUFFERS   8192 * 16 * 2
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_CACHE_SIZE
@@ -294,7 +294,7 @@ struct app_lcore_params_io {
 		uint32_t nic_queues_iters[APP_MAX_NIC_RX_QUEUES_PER_IO_LCORE];
 		uint32_t nic_ports_count[APP_MAX_NIC_TX_PORTS_PER_IO_LCORE];
 		uint32_t nic_ports_iters[APP_MAX_NIC_TX_PORTS_PER_IO_LCORE];
-		
+
 		/* Timing */
 		struct timeval start_ewr, end_ewr;
 	} tx;
