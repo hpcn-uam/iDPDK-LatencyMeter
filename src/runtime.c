@@ -469,12 +469,12 @@ app_lcore_io_tx_bw(
 				);
 #ifdef QUEUE_STATS
 			}
-			printf("NIC TX port %u:%u: drop ratio = %.2f (%u/%u) speed %.1lf pkts/s\n",
+			/*printf("NIC TX port %u:%u: drop ratio = %.2f (%u/%u) speed %.1lf pkts/s\n",
 				(unsigned) port, queue,
 				(double) stats.oerrors / (double) (stats.oerrors + lp->tx.nic_queues_count[i]),
 				(uint32_t) lp->tx.nic_queues_count[i], (uint32_t) stats.oerrors,
 				lp->tx.nic_queues_count[i]/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
-				);
+				);*/
 #endif
 			lp->tx.nic_queues_iters[i] = 0;
 			lp->tx.nic_queues_count[i] = 0;
