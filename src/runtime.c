@@ -445,19 +445,49 @@ app_lcore_io_tx_bw(
 		//}
 
 #if APP_STATS
-		lp->tx.nic_ports_iters[port] ++;
-		lp->tx.nic_ports_count[port] += n_pkts;
-		if (unlikely(lp->tx.nic_ports_iters[port] == APP_STATS && queue == 0)) {
-			unsigned lcore = rte_lcore_id();
+		lp->tx.nic_queues_iters[i] ++;
+		lp->tx.nic_queues_count[i] += n_mbufs;
+		if (unlikely(lp->tx.nic_queues_iters[i] == APP_STATS*10)) {
+			struct rte_eth_stats stats;
+			struct timeval start_ewr, end_ewr;
 
-			printf("\t\t\tI/O TX %u out (port %u): avg burst size = %.2f\n",
-					lcore,
-					(unsigned) port,
-					((double) lp->tx.nic_ports_count[port]) / ((double) lp->tx.nic_ports_iters[port]));
-			lp->tx.nic_ports_iters[port] = 0;
-			lp->tx.nic_ports_count[port] = 0;
+			rte_eth_stats_get(port, &stats);
+			gettimeofday(&lp->tx.end_ewr, NULL);
 
+			start_ewr = lp->tx.start_ewr; end_ewr = lp->tx.end_ewr;
+
+#ifdef QUEUE_STATS
+			if(queue==0)
+			{
+#endif
+			printf("NIC TX port %u: drop ratio = %.2f (%u/%u) speed: %lf Gbps (%.1lf pkts/s)\n",
+				(unsigned) port,
+				(double) stats.oerrors / (double) (stats.oerrors + stats.opackets),
+				(uint32_t) stats.opackets, (uint32_t) stats.oerrors,
+				(((stats.obytes)+stats.opackets*(/*4crc+8prelud+12ifg*/(8+12)))/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec))/1000000.))/(1000*1000*1000./8.),
+				stats.opackets/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
+				);
+#ifdef QUEUE_STATS
+			}
+			printf("NIC TX port %u:%u: drop ratio = %.2f (%u/%u) speed %.1lf pkts/s\n",
+				(unsigned) port, queue,
+				(double) stats.oerrors / (double) (stats.oerrors + lp->tx.nic_queues_count[i]),
+				(uint32_t) lp->tx.nic_queues_count[i], (uint32_t) stats.oerrors,
+				lp->tx.nic_queues_count[i]/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
+				);
+#endif
+			lp->tx.nic_queues_iters[i] = 0;
+			lp->tx.nic_queues_count[i] = 0;
+
+#ifdef QUEUE_STATS
+		if(queue==0)
+#endif
 			rte_eth_stats_reset (port);
+
+#ifdef QUEUE_STATS
+        if(queue==0)
+#endif
+			lp->tx.start_ewr = end_ewr; // Updating start
 		}
 #endif
 
