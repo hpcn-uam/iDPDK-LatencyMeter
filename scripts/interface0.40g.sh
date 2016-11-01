@@ -20,4 +20,4 @@ make -j5 && \
         sudo build/app/hpcn_latency -c FFF -n 2 -- --rx "(0,0,7)" --tx "(0,0,8),(0,1,9)" \
                 --rsz "1024, 2048, 2048, 2048" \
                 --bsz "(144, 144), (144, 144), (144, 144)" \
-		--trainTime 0 $@
+		--trainSleep 0 $@
