@@ -444,6 +444,24 @@ app_lcore_io_tx_bw(
 		//	}
 		//}
 
+#if APP_STATS
+		lp->tx.nic_ports_iters[port] ++;
+		lp->tx.nic_ports_count[port] += n_pkts;
+		if (unlikely(lp->tx.nic_ports_iters[port] == APP_STATS && queue == 0)) {
+			unsigned lcore = rte_lcore_id();
+
+			printf("\t\t\tI/O TX %u out (port %u): avg burst size = %.2f\n",
+					lcore,
+					(unsigned) port,
+					((double) lp->tx.nic_ports_count[port]) / ((double) lp->tx.nic_ports_iters[port]));
+			lp->tx.nic_ports_iters[port] = 0;
+			lp->tx.nic_ports_count[port] = 0;
+
+			rte_eth_stats_reset (port);
+		}
+#endif
+
+
 		if (unlikely(n_pkts < n_mbufs)) {
 			//printf("Errorcito\n");
 			for (k = n_pkts; k < n_mbufs; k ++) {
