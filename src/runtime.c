@@ -447,7 +447,7 @@ app_lcore_io_tx_bw(
 #if APP_STATS
 		lp->tx.nic_queues_iters[i] ++;
 		lp->tx.nic_queues_count[i] += n_mbufs;
-		if (unlikely(lp->tx.nic_queues_iters[i] == APP_STATS*10)) {
+		if (unlikely(lp->tx.nic_queues_iters[i] == APP_STATS)) {
 			struct rte_eth_stats stats;
 			struct timeval start_ewr, end_ewr;
 
