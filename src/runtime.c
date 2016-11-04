@@ -144,8 +144,9 @@ uint8_t icmppkt []={
 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35,
 0x36, 0x37
 };
-unsigned icmparraylen = sizeof(icmppkt);
+
 unsigned icmppktlen = sizeof(icmppkt);
+unsigned sndpktlen = sizeof(icmppkt);
 
 int doChecksum = 0;
 int autoIncNum = 0;
@@ -339,20 +340,20 @@ app_lcore_io_tx(
 			continue;
 		}
 
-		tmpbuf->pkt_len = icmppktlen;
-		tmpbuf->data_len = icmppktlen;
+		tmpbuf->pkt_len = sndpktlen;
+		tmpbuf->data_len = sndpktlen;
 		tmpbuf->port = port;
 		
 		if(autoIncNum){
 			(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
 		}
 
-		memcpy(rte_ctrlmbuf_data(tmpbuf),icmppkt,icmparraylen-8);
-		*((hptl_t*)(rte_ctrlmbuf_data(tmpbuf)+icmppktlen-8)) = hptl_get();
+		memcpy(rte_ctrlmbuf_data(tmpbuf),icmppkt,icmppktlen-8);
+		*((hptl_t*)(rte_ctrlmbuf_data(tmpbuf)+sndpktlen-8)) = hptl_get();
 
 		if(doChecksum){
 			uint16_t cksum;
-			cksum = rte_raw_cksum (rte_ctrlmbuf_data(tmpbuf)+icmpStart, icmppktlen-icmpStart);
+			cksum = rte_raw_cksum (rte_ctrlmbuf_data(tmpbuf)+icmpStart, sndpktlen-icmpStart);
 			*((uint16_t*)(rte_ctrlmbuf_data(tmpbuf)+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
 		}
 
@@ -406,20 +407,20 @@ app_lcore_io_tx_bw(
 				break;
 			}
 
-			lp->tx.mbuf_out[port].array[k]->pkt_len = icmppktlen;
-			lp->tx.mbuf_out[port].array[k]->data_len = icmppktlen;
+			lp->tx.mbuf_out[port].array[k]->pkt_len = sndpktlen;
+			lp->tx.mbuf_out[port].array[k]->data_len = sndpktlen;
 			lp->tx.mbuf_out[port].array[k]->port = port;
 			
 			//if(autoIncNum){
 			//	(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
 			//}
 
-			memcpy(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k]),icmppkt,icmparraylen);
-			//*((hptl_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmppktlen-8)) = hptl_get();
+			memcpy(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k]),icmppkt,icmppktlen);
+			//*((hptl_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+sndpktlen-8)) = hptl_get();
 
 			//if(doChecksum){
 			//	uint16_t cksum;
-			//	cksum = rte_raw_cksum (rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart, icmppktlen-icmpStart);
+			//	cksum = rte_raw_cksum (rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart, sndpktlen-icmpStart);
 			//	*((uint16_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
 			//}
 		}
