@@ -150,6 +150,7 @@ unsigned sndpktlen = sizeof(icmppkt);
 
 int doChecksum = 0;
 int autoIncNum = 0;
+int hwTimeTest = 0;
 int bandWidthMeasure = 0;
 uint64_t trainLen   = 0;
 uint64_t trainSleep = 0; //ns
@@ -194,7 +195,10 @@ app_lcore_io_rx(
 					printf("%d: Latency %lu ns",
 						k+1,
 						currentLatency);
-						sumLatency += currentLatency; 
+						sumLatency += currentLatency;
+					if(hwTimeTest){
+						printf(" hw time (%lu.%lu)",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
+					}
 					if(lastTime!=0){
 						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
 					}else{
@@ -226,6 +230,11 @@ app_lcore_io_rx(
 			latencyStats[counter].pktLen=rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1]);
 			latencyStats[counter].recved=1;
 			++counter;
+			if(hwTimeTest){
+				const float fpgaConvRate = 4.294967296;
+				latencyStats[counter].hwTime.tv_sec  = ntohl((uint32_t)(rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])+50));
+				latencyStats[counter].hwTime.tv_nsec = ntohl((uint32_t)(rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])+54))/fpgaConvRate;
+			}
 		}
 
 #if APP_IO_RX_DROP_ALL_PACKETS

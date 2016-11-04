@@ -374,6 +374,7 @@ struct app_params {
 struct pktLatencyStat {
 	hptl_t sentTime;
 	hptl_t recvTime;
+	struct timespec hwTime;
 	uint16_t pktLen;
 	uint8_t recved;
 } __rte_cache_aligned;

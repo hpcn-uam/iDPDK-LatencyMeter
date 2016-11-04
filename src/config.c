@@ -122,6 +122,7 @@ static const char usage[] =
 "    --pktLen \"Packet LENGTH\" : Sets the size of each sent packet             \n"
 "    --trainLen \"TRAIN LENGTH\" : Enables and sets the packet train length     \n"
 "    --trainSleep \"TRAIN SLEEP\": Sleep in NS between packets                  \n"
+"    --hw : Checks HW timestamp packet [For debug purposes]                     \n"
 "    --waitTime \"WAIT TIMEOUT\" : Nanoseconds to stop the measurment when all  \n"
 "                                    packets has been sent                      \n"
 "    --chksum : Each packet recalculate the IP/ICMP checksum                    \n"
@@ -445,6 +446,7 @@ extern uint8_t icmppkt [];
 extern int doChecksum;
 extern int autoIncNum;
 extern int bandWidthMeasure;
+extern int hwTimeTest;
 extern uint64_t trainLen;
 extern uint64_t trainSleep; //ns
 extern uint64_t waitTime;   //ns
@@ -586,6 +588,8 @@ app_parse_args(int argc, char **argv)
 		{"autoInc", 0, 0, 0},
 		//Measurment kind
 		{"bw", 0, 0, 0},
+		//debug
+		{"hw", 0, 0, 0},
 		//endlist
 		{NULL, 0, 0, 0}
 	};
@@ -698,6 +702,9 @@ app_parse_args(int argc, char **argv)
 			}
 			if (!strcmp(lgopts[option_index].name, "bw")) {
 				bandWidthMeasure = 1;
+			}
+			if (!strcmp(lgopts[option_index].name, "hw")) {
+				hwTimeTest = 1;
 			}
 			break;
 
