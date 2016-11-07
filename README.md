@@ -1,4 +1,4 @@
-High Speed Latency-Metter using DPDK
+High Speed Latency-Metter using DPDK [Early Development Phase]
 =================
 
 This application allows to measure the network's Latency and Bandwith.
