@@ -255,7 +255,7 @@ app_lcore_io_rx(
 			//end if all packets have been recved
 			counter+=n_mbufs;
 			if(counter == trainLen)
-				continueRX = 1;
+				continueRX = 0;
 		}
 
 #if APP_IO_RX_DROP_ALL_PACKETS
