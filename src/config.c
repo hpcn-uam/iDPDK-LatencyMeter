@@ -450,7 +450,7 @@ extern int hwTimeTest;
 extern uint64_t trainLen;
 extern uint64_t trainSleep; //ns
 extern uint64_t waitTime;   //ns
-extern unsigned icmppktlen;
+extern unsigned sndpktlen;
 
 extern struct pktLatencyStat * latencyStats;
 
@@ -517,7 +517,7 @@ parse_arg_ipd(const char *arg)
 static int
 parse_arg_pktLen(const char *arg)
 {
-	if(sscanf(arg,"%u", &icmppktlen)!=1){
+	if(sscanf(arg,"%u", &sndpktlen)!=1){
 		return -1;
 	}
 
