@@ -188,6 +188,8 @@ app_lcore_io_rx(
 			hptl_t firstTime=0, lastTime=0;
 			uint64_t losses = 0;
 			uint64_t sumLatency = 0;
+			struct timespec hwRelation;
+			struct timespec hwDelta;
 
 			for(k=0;k<trainLen;k++){
 				if(latencyStats[k].recved){
@@ -196,12 +198,26 @@ app_lcore_io_rx(
 						k+1,
 						currentLatency);
 						sumLatency += currentLatency;
-					if(hwTimeTest){
-						printf(" hwTime (%lu.%lu)",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
-					}
+						if(hwTimeTest){
+							if(lastTime!=0){
+								printf(" hwDeltaLatency %lu",latencyStats[k].hwTime.tv_nsec-hwDelta.tv_nsec);
+							}
+							hwDelta = latencyStats[k].hwTime;
+						}
 					if(lastTime!=0){
+						if(hwTimeTest){
+							latencyStats[k].hwTime.tv_sec += hwRelation.tv_sec;
+							latencyStats[k].hwTime.tv_nsec+= hwRelation.tv_nsec;
+							/*
+							printf(" hwLatency %lu",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);*/
+						}
 						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
 					}else{
+						if(hwTimeTest){
+							hwRelation = hptl_timespec(latencyStats[k].recvTime);
+							hwRelation.tv_sec -= latencyStats[k].hwTime.tv_sec ;
+							hwRelation.tv_nsec-= latencyStats[k].hwTime.tv_nsec;
+						}
 						firstTime = latencyStats[k].recvTime;
 					}
 					lastTime = latencyStats[k].recvTime;
@@ -229,12 +245,16 @@ app_lcore_io_rx(
 			latencyStats[counter].sentTime = (*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])-8));
 			latencyStats[counter].pktLen=rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1]);
 			latencyStats[counter].recved=1;
-			++counter;
 			if(hwTimeTest){
 				const float fpgaConvRate = 4.294967296;
 				latencyStats[counter].hwTime.tv_sec  = ntohl(*(uint32_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+50));
 				latencyStats[counter].hwTime.tv_nsec = ntohl(*(uint32_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+54))/fpgaConvRate;
 			}
+
+			//end if all packets have been recved
+			counter+=n_mbufs;
+			if(counter == trainLen)
+				continueRX = 1;
 		}
 
 #if APP_IO_RX_DROP_ALL_PACKETS
