@@ -259,7 +259,7 @@ app_lcore_io_rx(
 			latencyStats[counter].recved=1;
 			if(hwTimeTest){
 				const float fpgaConvRate = 4.294967296;
-				latencyStats[counter].hwTime.tv_sec  = ntohl(*(uint32_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+50));
+				latencyStats[counter].hwTime.tv_sec  = ntohl(*(uint32_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+50))/fpgaConvRate;
 				latencyStats[counter].hwTime.tv_nsec = ntohl(*(uint32_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+54))/fpgaConvRate;
 			}
 
