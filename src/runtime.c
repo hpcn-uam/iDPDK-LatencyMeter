@@ -188,7 +188,7 @@ app_lcore_io_rx(
 			hptl_t firstTime=0, lastTime=0;
 			uint64_t losses = 0;
 			uint64_t sumLatency = 0;
-			struct timespec hwRelation;
+			struct timespec hwRelation={0,0};
 			struct timespec hwDelta;
 
 			for(k=0;k<trainLen;k++){
