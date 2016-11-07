@@ -199,6 +199,7 @@ app_lcore_io_rx(
 						currentLatency);
 						sumLatency += currentLatency;
 						if(hwTimeTest){
+							printf(" hwTime %lu.%lu",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
 							if(lastTime!=0){
 								printf(" hwDeltaLatency %lu.%lu",latencyStats[k].hwTime.tv_sec-hwDelta.tv_sec,latencyStats[k].hwTime.tv_nsec-hwDelta.tv_nsec);
 							}
