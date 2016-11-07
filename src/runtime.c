@@ -187,6 +187,7 @@ app_lcore_io_rx(
 			uint64_t totalBytes = 0;
 			hptl_t firstTime=0, lastTime=0;
 			uint64_t losses = 0;
+			uint64_t ignored = 0;
 			uint64_t sumLatency = 0;
 			struct timespec hwRelation={0,0};
 			struct timespec hwDelta;
@@ -225,14 +226,15 @@ app_lcore_io_rx(
 					totalBytes += latencyStats[k].pktLen;
 					printf("\n");
 				}else{
-					losses++;
+					printf("%d: Recved but ignored\n",
+					ignored++;
 				}
 			}
 			printf("Mean-BandWidth %lf Gbps\n",(totalBytes/1000000000.)/( ((double)lastTime - firstTime) /1000000000.));
-			printf("Mean-Latency %lf ns\n", sumLatency/( ((double)trainLen - losses) ));
+			printf("Mean-Latency %lf ns\n", sumLatency/( ((double)trainLen - ignored) ));
 
-			if(losses>0) {
-				printf("%ld Packets lost\n",losses);
+			if(ignored>0) {
+				printf("%ld Packets ignored\n",ignored);
 			}
 			exit(0);
 		}
