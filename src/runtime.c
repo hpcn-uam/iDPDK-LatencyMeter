@@ -197,7 +197,7 @@ app_lcore_io_rx(
 						currentLatency);
 						sumLatency += currentLatency;
 					if(hwTimeTest){
-						printf(" hw time (%lu.%lu)",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
+						printf(" hwTime (%lu.%lu)",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
 					}
 					if(lastTime!=0){
 						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
