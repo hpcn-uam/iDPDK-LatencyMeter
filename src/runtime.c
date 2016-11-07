@@ -242,6 +242,10 @@ app_lcore_io_rx(
 		}
 
 		if(trainLen && (*(uint16_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+icmpStart+2+2)) == (*(uint16_t*)(icmppkt+icmpStart+2+2))){
+			//Add counter #recvPkts-1, so the data is saved in the structure as "the last packet of the bulk, instead of the first one"
+			counter+=n_mbufs-1;
+
+			//Latency ounters
 			latencyStats[counter].recvTime=hptl_get();
 			latencyStats[counter].sentTime = (*(hptl_t*)(rte_ctrlmbuf_data(lp->rx.mbuf_in.array[n_mbufs-1])+rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1])-8));
 			latencyStats[counter].pktLen=rte_ctrlmbuf_len(lp->rx.mbuf_in.array[n_mbufs-1]);
@@ -253,7 +257,7 @@ app_lcore_io_rx(
 			}
 
 			//end if all packets have been recved
-			counter+=n_mbufs;
+			counter++;
 			if(counter == trainLen)
 				continueRX = 0;
 		}
