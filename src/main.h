@@ -1,13 +1,13 @@
 /*-
  *   BSD LICENSE
- * 
+ *
  *   Copyright(c) 2010-2014 Intel Corporation. All rights reserved.
  *   All rights reserved.
- * 
+ *
  *   Redistribution and use in source and binary forms, with or without
  *   modification, are permitted provided that the following conditions
  *   are met:
- * 
+ *
  *     * Redistributions of source code must retain the above copyright
  *       notice, this list of conditions and the following disclaimer.
  *     * Redistributions in binary form must reproduce the above copyright
@@ -17,7 +17,7 @@
  *     * Neither the name of Intel Corporation nor the names of its
  *       contributors may be used to endorse or promote products derived
  *       from this software without specific prior written permission.
- * 
+ *
  *   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
  *   "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
  *   LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -43,11 +43,11 @@
 #endif
 
 #ifndef APP_MAX_LCORES
-#define APP_MAX_LCORES       RTE_MAX_LCORE
+#define APP_MAX_LCORES RTE_MAX_LCORE
 #endif
 
 #ifndef APP_MAX_NIC_PORTS
-#define APP_MAX_NIC_PORTS    RTE_MAX_ETHPORTS
+#define APP_MAX_NIC_PORTS RTE_MAX_ETHPORTS
 #endif
 
 #ifndef APP_MAX_RX_QUEUES_PER_NIC_PORT
@@ -87,18 +87,18 @@
 #error "APP_MAX_WORKER_LCORES is too big"
 #endif
 
-
 /* Mempools */
 #ifndef APP_DEFAULT_MBUF_SIZE
-#define APP_DEFAULT_MBUF_SIZE (9000 /*2048*/ + sizeof(struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
+#define APP_DEFAULT_MBUF_SIZE \
+	(9000 /*2048*/ + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_BUFFERS
-#define APP_DEFAULT_MEMPOOL_BUFFERS   8192 * 16 * 2
+#define APP_DEFAULT_MEMPOOL_BUFFERS 8192 * 16 * 2
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_CACHE_SIZE
-#define APP_DEFAULT_MEMPOOL_CACHE_SIZE  256
+#define APP_DEFAULT_MEMPOOL_CACHE_SIZE 256
 #endif
 
 /* LPM Tables */
@@ -118,23 +118,23 @@
  * on how these parameters should be set.
  */
 #ifndef APP_DEFAULT_NIC_RX_PTHRESH
-#define APP_DEFAULT_NIC_RX_PTHRESH  8
+#define APP_DEFAULT_NIC_RX_PTHRESH 8
 #endif
 
 #ifndef APP_DEFAULT_NIC_RX_HTHRESH
-#define APP_DEFAULT_NIC_RX_HTHRESH  8
+#define APP_DEFAULT_NIC_RX_HTHRESH 8
 #endif
 
 #ifndef APP_DEFAULT_NIC_RX_WTHRESH
-#define APP_DEFAULT_NIC_RX_WTHRESH  4
+#define APP_DEFAULT_NIC_RX_WTHRESH 4
 #endif
 
 #ifndef APP_DEFAULT_NIC_RX_FREE_THRESH
-#define APP_DEFAULT_NIC_RX_FREE_THRESH  64
+#define APP_DEFAULT_NIC_RX_FREE_THRESH 64
 #endif
 
 #ifndef APP_DEFAULT_NIC_RX_DROP_EN
-#define APP_DEFAULT_NIC_RX_DROP_EN 0 //Revisar
+#define APP_DEFAULT_NIC_RX_DROP_EN 0  // Revisar
 #endif
 
 /* NIC TX */
@@ -148,23 +148,23 @@
  * network controllers and/or network drivers.
  */
 #ifndef APP_DEFAULT_NIC_TX_PTHRESH
-#define APP_DEFAULT_NIC_TX_PTHRESH  36
+#define APP_DEFAULT_NIC_TX_PTHRESH 36
 #endif
 
 #ifndef APP_DEFAULT_NIC_TX_HTHRESH
-#define APP_DEFAULT_NIC_TX_HTHRESH  0
+#define APP_DEFAULT_NIC_TX_HTHRESH 0
 #endif
 
 #ifndef APP_DEFAULT_NIC_TX_WTHRESH
-#define APP_DEFAULT_NIC_TX_WTHRESH  0
+#define APP_DEFAULT_NIC_TX_WTHRESH 0
 #endif
 
 #ifndef APP_DEFAULT_NIC_TX_FREE_THRESH
-#define APP_DEFAULT_NIC_TX_FREE_THRESH  0
+#define APP_DEFAULT_NIC_TX_FREE_THRESH 0
 #endif
 
 #ifndef APP_DEFAULT_NIC_TX_RS_THRESH
-#define APP_DEFAULT_NIC_TX_RS_THRESH  0
+#define APP_DEFAULT_NIC_TX_RS_THRESH 0
 #endif
 
 /* Software Rings */
@@ -178,46 +178,46 @@
 
 /* Bursts */
 #ifndef APP_MBUF_ARRAY_SIZE
-#define APP_MBUF_ARRAY_SIZE   512
+#define APP_MBUF_ARRAY_SIZE 512
 #endif
 
 #ifndef APP_DEFAULT_BURST_SIZE_IO_RX_READ
-#define APP_DEFAULT_BURST_SIZE_IO_RX_READ  144
+#define APP_DEFAULT_BURST_SIZE_IO_RX_READ 144
 #endif
 #if (APP_DEFAULT_BURST_SIZE_IO_RX_READ > APP_MBUF_ARRAY_SIZE)
 #error "APP_DEFAULT_BURST_SIZE_IO_RX_READ is too big"
 #endif
 
 #ifndef APP_DEFAULT_BURST_SIZE_IO_RX_WRITE
-#define APP_DEFAULT_BURST_SIZE_IO_RX_WRITE  144
+#define APP_DEFAULT_BURST_SIZE_IO_RX_WRITE 144
 #endif
 #if (APP_DEFAULT_BURST_SIZE_IO_RX_WRITE > APP_MBUF_ARRAY_SIZE)
 #error "APP_DEFAULT_BURST_SIZE_IO_RX_WRITE is too big"
 #endif
 
 #ifndef APP_DEFAULT_BURST_SIZE_IO_TX_READ
-#define APP_DEFAULT_BURST_SIZE_IO_TX_READ  144
+#define APP_DEFAULT_BURST_SIZE_IO_TX_READ 144
 #endif
 #if (APP_DEFAULT_BURST_SIZE_IO_TX_READ > APP_MBUF_ARRAY_SIZE)
 #error "APP_DEFAULT_BURST_SIZE_IO_TX_READ is too big"
 #endif
 
 #ifndef APP_DEFAULT_BURST_SIZE_IO_TX_WRITE
-#define APP_DEFAULT_BURST_SIZE_IO_TX_WRITE  144
+#define APP_DEFAULT_BURST_SIZE_IO_TX_WRITE 144
 #endif
 #if (APP_DEFAULT_BURST_SIZE_IO_TX_WRITE > APP_MBUF_ARRAY_SIZE)
 #error "APP_DEFAULT_BURST_SIZE_IO_TX_WRITE is too big"
 #endif
 
 #ifndef APP_DEFAULT_BURST_SIZE_WORKER_READ
-#define APP_DEFAULT_BURST_SIZE_WORKER_READ  144
+#define APP_DEFAULT_BURST_SIZE_WORKER_READ 144
 #endif
 #if ((2 * APP_DEFAULT_BURST_SIZE_WORKER_READ) > APP_MBUF_ARRAY_SIZE)
 #error "APP_DEFAULT_BURST_SIZE_WORKER_READ is too big"
 #endif
 
 #ifndef APP_DEFAULT_BURST_SIZE_WORKER_WRITE
-#define APP_DEFAULT_BURST_SIZE_WORKER_WRITE  144
+#define APP_DEFAULT_BURST_SIZE_WORKER_WRITE 144
 #endif
 #if (APP_DEFAULT_BURST_SIZE_WORKER_WRITE > APP_MBUF_ARRAY_SIZE)
 #error "APP_DEFAULT_BURST_SIZE_WORKER_WRITE is too big"
@@ -268,7 +268,7 @@ struct app_lcore_params_io {
 		uint32_t nic_queues_iters[APP_MAX_NIC_RX_QUEUES_PER_IO_LCORE];
 		uint32_t rings_count[APP_MAX_WORKER_LCORES];
 		uint32_t rings_iters[APP_MAX_WORKER_LCORES];
-		
+
 		/* Timing */
 		struct timeval start_ewr, end_ewr;
 	} rx;
@@ -342,8 +342,10 @@ struct app_params {
 	struct app_lcore_params lcore_params[APP_MAX_LCORES];
 
 	/* NIC */
-	uint8_t nic_rx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_RX_QUEUES_PER_NIC_PORT];
-	uint8_t nic_tx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_TX_QUEUES_PER_NIC_PORT];
+	uint8_t
+	    nic_rx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_RX_QUEUES_PER_NIC_PORT];
+	uint8_t
+	    nic_tx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_TX_QUEUES_PER_NIC_PORT];
 
 	/* mbuf pools */
 	struct rte_mempool *pools[APP_MAX_SOCKETS];
@@ -381,19 +383,19 @@ struct pktLatencyStat {
 
 extern struct app_params app;
 
-int app_parse_args(int argc, char **argv);
-void app_print_usage(void);
-void app_init(void);
-int app_lcore_main_loop(void *arg);
+int app_parse_args (int argc, char **argv);
+void app_print_usage (void);
+void app_init (void);
+int app_lcore_main_loop (void *arg);
 
-int app_get_nic_rx_queues_per_port(uint8_t port);
-int app_get_nic_tx_queues_per_port(uint8_t port);
-int app_get_lcore_for_nic_rx(uint8_t port, uint8_t queue, uint32_t *lcore_out);
-int app_get_lcore_for_nic_tx(uint8_t port, uint8_t queue, uint32_t *lcore_out);
-int app_is_socket_used(uint32_t socket);
-uint32_t app_get_lcores_io_rx(void);
-uint32_t app_get_lcores_worker(void);
-void app_print_params(void);
+int app_get_nic_rx_queues_per_port (uint8_t port);
+int app_get_nic_tx_queues_per_port (uint8_t port);
+int app_get_lcore_for_nic_rx (uint8_t port, uint8_t queue, uint32_t *lcore_out);
+int app_get_lcore_for_nic_tx (uint8_t port, uint8_t queue, uint32_t *lcore_out);
+int app_is_socket_used (uint32_t socket);
+uint32_t app_get_lcores_io_rx (void);
+uint32_t app_get_lcores_worker (void);
+void app_print_params (void);
 
 #ifdef RTE_EXEC_ENV_BAREMETAL
 #define MAIN _main
@@ -403,7 +405,6 @@ void app_print_params(void);
 #endif
 #endif
 
-int MAIN(int argc, char **argv);
+int MAIN (int argc, char **argv);
 
 #endif /* _MAIN_H_ */
-
