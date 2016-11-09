@@ -193,7 +193,7 @@ app_lcore_io_rx(
 
 			for(k=0;k<trainLen;k++){
 				if(latencyStats[k].recved){
-					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime - trainSleep;
+					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
 					printf("%d: Latency %lu ns",
 						k+1,
 						currentLatency);
