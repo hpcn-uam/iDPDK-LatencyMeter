@@ -690,7 +690,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 #endif
 
 		if (unlikely (n_pkts < n_mbufs)) {
-			printf ("Ts packet unsended\n");
+			//printf ("Ts packet unsended\n");
 			for (k = n_pkts; k < n_mbufs; k++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
