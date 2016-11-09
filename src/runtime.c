@@ -206,12 +206,12 @@ app_lcore_io_rx(
 							hwDelta = latencyStats[k].hwTime;
 						}
 					if(lastTime!=0){
-						if(hwTimeTest){
+						/*if(hwTimeTest){
 							latencyStats[k].hwTime.tv_sec += hwRelation.tv_sec;
 							latencyStats[k].hwTime.tv_nsec+= hwRelation.tv_nsec;
 							
 							printf(" hwLatency %lu.%lu",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
-						}
+						}*/
 						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
 					}else{
 						if(hwTimeTest){
