@@ -442,10 +442,6 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			if (*(uint64_t *)(data + len - 16) == tspacketId) {  // paquete marcado
 				if (trainLen && (*(uint16_t *)(data + icmpStart + 2 + 2) ==
 				                 *(uint16_t *)(icmppkt + icmpStart + 2 + 2))) {
-					// Add counter #recvPkts-1, so the data is saved in the structure as "the last
-					// packet of the bulk, instead of the first one"
-					counter += i;
-
 					// Latency ounters
 					latencyStats[counter].recvTime = hptl_get ();
 					latencyStats[counter].sentTime = (*(hptl_t *)(data + len - 8));
