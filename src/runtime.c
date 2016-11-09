@@ -145,6 +145,8 @@ uint8_t icmppkt []={
 0x36, 0x37
 };
 
+const uint64_t tspacketId  = 0xCACAFEA;
+
 unsigned icmppktlen = sizeof(icmppkt);
 unsigned sndpktlen = sizeof(icmppkt);
 
@@ -276,7 +278,6 @@ app_lcore_io_rx(
 	}
 }
 
-
 static inline void
 app_lcore_io_rx_bw(
 	struct app_lcore_params_io *lp,
@@ -355,6 +356,122 @@ app_lcore_io_rx_bw(
 		continue;
 #endif
 
+	}
+}
+
+
+static inline void
+app_lcore_io_rx_sts(
+	struct app_lcore_params_io *lp,
+	uint32_t bsz_rd)
+{
+	uint32_t i;
+
+	static uint32_t counter=0;
+
+	for (i = 0; i < lp->rx.n_nic_queues; i ++) {
+		uint8_t port = lp->rx.nic_queues[i].port;
+		uint8_t queue = lp->rx.nic_queues[i].queue;
+		uint32_t n_mbufs, i, j;
+
+		n_mbufs = rte_eth_rx_burst(
+			port,
+			queue,
+			lp->rx.mbuf_in.array,
+			(uint16_t) bsz_rd);
+
+		if (unlikely(continueRX == 0)) {
+			uint32_t k;
+			uint64_t totalBytes = 0;
+			hptl_t firstTime=0, lastTime=0;
+			uint64_t ignored = 0;
+			uint64_t sumLatency = 0;
+			struct timespec hwRelation={0,0};
+			struct timespec hwDelta;
+
+			for(k=0;k<trainLen;k++){
+				if(latencyStats[k].recved){
+					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
+					printf("%d: Latency %lu ns",
+						k+1,
+						currentLatency);
+						sumLatency += currentLatency;
+						if(hwTimeTest){
+							printf(" hwTime %lu.%lu",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
+							if(lastTime!=0){
+								printf(" hwDeltaLatency %lu.%lu",latencyStats[k].hwTime.tv_sec-hwDelta.tv_sec,latencyStats[k].hwTime.tv_nsec-hwDelta.tv_nsec);
+							}
+							hwDelta = latencyStats[k].hwTime;
+						}
+					if(lastTime!=0){
+						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
+					}else{
+						if(hwTimeTest){
+							hwRelation = hptl_timespec(latencyStats[k].recvTime);
+							hwRelation.tv_sec -= latencyStats[k].hwTime.tv_sec ;
+							hwRelation.tv_nsec-= latencyStats[k].hwTime.tv_nsec;
+						}
+						firstTime = latencyStats[k].recvTime;
+					}
+					lastTime = latencyStats[k].recvTime;
+					totalBytes += latencyStats[k].pktLen;
+					printf("\n");
+				}else{
+					printf("%d: Recved but ignored\n",k+1);
+					ignored++;
+				}
+			}
+			printf("Mean-BandWidth %lf Gbps\n",(totalBytes/1000000000.)/( ((double)lastTime - firstTime) /1000000000.));
+			printf("Mean-Latency %lf ns\n", sumLatency/( ((double)trainLen - ignored) ));
+
+			//Ignored / Dropped stats
+			if(ignored>0) {
+				printf("%ld Packets ignored\n",ignored);
+			}
+			struct rte_eth_stats stats;
+			rte_eth_stats_get(port, &stats);
+			if(stats.ierrors>0){
+				printf("%ld Packets errored/dropped\n",stats.ierrors);
+			}
+			exit(0);
+		}
+
+		if (unlikely(n_mbufs == 0)) {
+			continue;
+		}
+
+		for (i = 0; i < n_mbufs; i ++) {
+			uint8_t * data = (uint8_t *)rte_ctrlmbuf_data(lp->rx.mbuf_in.array[i]);
+			uint32_t len = rte_ctrlmbuf_len(lp->rx.mbuf_in.array[i]);
+			
+			if(*(uint64_t*)(data + len - 16) == tspacketId){ // paquete marcado
+				if(trainLen && (*(uint16_t*)(data+icmpStart+2+2) == *(uint16_t*)(icmppkt+icmpStart+2+2))) {
+					//Add counter #recvPkts-1, so the data is saved in the structure as "the last packet of the bulk, instead of the first one"
+					counter+=i;
+
+					//Latency ounters
+					latencyStats[counter].recvTime=hptl_get();
+					latencyStats[counter].sentTime = (*(hptl_t*)(data+len-8));
+					latencyStats[counter].pktLen=len;
+					latencyStats[counter].recved=1;
+					if(hwTimeTest){
+						const float fpgaConvRate = 4.294967296;
+						latencyStats[counter].hwTime.tv_sec  = ntohl(*(uint32_t*)(data+50))/fpgaConvRate;
+						latencyStats[counter].hwTime.tv_nsec = ntohl(*(uint32_t*)(data+54))/fpgaConvRate;
+					}
+
+					//end if all packets have been recved
+					counter++;
+					if(counter == trainLen)
+						continueRX = 0;
+				}
+			}
+		}
+
+		for (j = 0; j < n_mbufs; j ++) {
+			struct rte_mbuf *pkt = lp->rx.mbuf_in.array[j];
+			rte_pktmbuf_free(pkt);
+		}
 	}
 }
 
@@ -654,7 +771,7 @@ app_lcore_main_loop_io(void)
 			}
 
 			if (likely(lp->tx.n_nic_queues > 0)) {
-				app_lcore_io_tx_sts(lp); 
+				app_lcore_io_tx_sts(lp, app.burst_size_io_tx_write); 
 			}
 
 			i ++;
