@@ -154,7 +154,7 @@ int selectiveTS      = 0;  // Selective Timestamping
 int hwTimeTest       = 0;
 int bandWidthMeasure = 0;
 uint64_t trainLen    = 0;
-uint64_t trainSleep  = 0;  // ns
+uint64_t trainSleep  = 0;                          // ns
 uint64_t waitTime    = 10 * 1000 * 1000 * 1000UL;  // ns
 
 int continueRX = 1;
@@ -631,6 +631,8 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]), icmppkt, icmppktlen);
 
 			if (k == n_mbufs - 1) {
+				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + sndpktlen -
+				               16)) = tspacketId;
 				*((hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + sndpktlen - 8)) =
 				    hptl_get ();
 
@@ -690,7 +692,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 #endif
 
 		if (unlikely (n_pkts < n_mbufs)) {
-			//printf ("Ts packet unsended\n");
+			// printf ("Ts packet unsended\n");
 			for (k = n_pkts; k < n_mbufs; k++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
