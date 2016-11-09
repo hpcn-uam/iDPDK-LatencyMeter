@@ -89,8 +89,7 @@
 
 /* Mempools */
 #ifndef APP_DEFAULT_MBUF_SIZE
-#define APP_DEFAULT_MBUF_SIZE \
-	(9000 /*2048*/ + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
+#define APP_DEFAULT_MBUF_SIZE (9000 /*2048*/ + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_BUFFERS
@@ -342,10 +341,8 @@ struct app_params {
 	struct app_lcore_params lcore_params[APP_MAX_LCORES];
 
 	/* NIC */
-	uint8_t
-	    nic_rx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_RX_QUEUES_PER_NIC_PORT];
-	uint8_t
-	    nic_tx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_TX_QUEUES_PER_NIC_PORT];
+	uint8_t nic_rx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_RX_QUEUES_PER_NIC_PORT];
+	uint8_t nic_tx_queue_mask[APP_MAX_NIC_PORTS][APP_MAX_TX_QUEUES_PER_NIC_PORT];
 
 	/* mbuf pools */
 	struct rte_mempool *pools[APP_MAX_SOCKETS];

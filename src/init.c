@@ -83,10 +83,10 @@ static struct rte_eth_conf port_conf = {
             .header_split   = 0, /**< Header Split disabled */
             .hw_ip_checksum = 0,
             /**< IP checksum offload enabled */  // DISABLED!
-            .hw_vlan_filter = 0, /**< VLAN filtering disabled */
+            .hw_vlan_filter = 0,                 /**< VLAN filtering disabled */
             .jumbo_frame    = 1,
             /**< Jumbo Frame Support disabled */  // ENABLED!
-            .hw_strip_crc = 0, /**< CRC stripped by hardware */
+            .hw_strip_crc = 0,                    /**< CRC stripped by hardware */
         },
     .rx_adv_conf =
         {
@@ -129,8 +129,7 @@ static void app_assign_worker_ids (void) {
 	/* Assign ID for each worker */
 	worker_id = 0;
 	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_worker *lp_worker =
-		    &app.lcore_params[lcore].worker;
+		struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore].worker;
 
 		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
 			continue;
@@ -155,9 +154,8 @@ static void app_init_mbuf_pools (void) {
 		printf ("Creating the mbuf pool for socket %u ...\n", socket);
 		app.pools[socket] = rte_mempool_create (
 		    name, APP_DEFAULT_MEMPOOL_BUFFERS, APP_DEFAULT_MBUF_SIZE,
-		    APP_DEFAULT_MEMPOOL_CACHE_SIZE,
-		    sizeof (struct rte_pktmbuf_pool_private), rte_pktmbuf_pool_init,
-		    NULL, rte_pktmbuf_init, NULL, socket, 0);
+		    APP_DEFAULT_MEMPOOL_CACHE_SIZE, sizeof (struct rte_pktmbuf_pool_private),
+		    rte_pktmbuf_pool_init, NULL, rte_pktmbuf_init, NULL, socket, 0);
 		if (app.pools[socket] == NULL) {
 			rte_panic ("Cannot create mbuf pool on socket %u\n", socket);
 		}
@@ -183,8 +181,7 @@ static void app_init_rings_rx (void) {
 		struct app_lcore_params_io *lp_io = &app.lcore_params[lcore].io;
 		unsigned socket_io, lcore_worker;
 
-		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) ||
-		    (lp_io->rx.n_nic_queues == 0)) {
+		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) || (lp_io->rx.n_nic_queues == 0)) {
 			continue;
 		}
 
@@ -192,9 +189,8 @@ static void app_init_rings_rx (void) {
 
 		for (lcore_worker = 0; lcore_worker < APP_MAX_LCORES; lcore_worker++) {
 			char name[32];
-			struct app_lcore_params_worker *lp_worker =
-			    &app.lcore_params[lcore_worker].worker;
-			struct rte_ring *ring = NULL;
+			struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore_worker].worker;
+			struct rte_ring *ring                     = NULL;
 
 			if (app.lcore_params[lcore_worker].type != e_APP_LCORE_WORKER) {
 				continue;
@@ -204,10 +200,10 @@ static void app_init_rings_rx (void) {
 			    "Creating ring to connect I/O lcore %u (socket %u) with worker "
 			    "lcore %u ...\n",
 			    lcore, socket_io, lcore_worker);
-			snprintf (name, sizeof (name), "app_ring_rx_s%u_io%u_w%u",
-			          socket_io, lcore, lcore_worker);
-			ring = rte_ring_create (name, app.ring_rx_size, socket_io,
-			                        RING_F_SP_ENQ | RING_F_SC_DEQ);
+			snprintf (name, sizeof (name), "app_ring_rx_s%u_io%u_w%u", socket_io, lcore,
+			          lcore_worker);
+			ring =
+			    rte_ring_create (name, app.ring_rx_size, socket_io, RING_F_SP_ENQ | RING_F_SC_DEQ);
 			if (ring == NULL) {
 				rte_panic (
 				    "Cannot create ring to connect I/O core %u with worker "
@@ -226,8 +222,7 @@ static void app_init_rings_rx (void) {
 	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
 		struct app_lcore_params_io *lp_io = &app.lcore_params[lcore].io;
 
-		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) ||
-		    (lp_io->rx.n_nic_queues == 0)) {
+		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) || (lp_io->rx.n_nic_queues == 0)) {
 			continue;
 		}
 
@@ -237,8 +232,7 @@ static void app_init_rings_rx (void) {
 	}
 
 	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_worker *lp_worker =
-		    &app.lcore_params[lcore].worker;
+		struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore].worker;
 
 		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
 			continue;
@@ -255,8 +249,7 @@ static void app_init_rings_tx (void) {
 
 	/* Initialize the rings for the TX side */
 	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_worker *lp_worker =
-		    &app.lcore_params[lcore].worker;
+		struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore].worker;
 		unsigned port;
 
 		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
@@ -288,10 +281,9 @@ static void app_init_rings_tx (void) {
 			    "Creating ring to connect worker lcore %u with TX port %u "
 			    "(through I/O lcore %u) (socket %u) ...\n",
 			    lcore, port, (unsigned)lcore_io, (unsigned)socket_io);
-			snprintf (name, sizeof (name), "app_ring_tx_s%u_w%u_p%u", socket_io,
-			          lcore, port);
-			ring = rte_ring_create (name, app.ring_tx_size, socket_io,
-			                        RING_F_SP_ENQ | RING_F_SC_DEQ);
+			snprintf (name, sizeof (name), "app_ring_tx_s%u_w%u_p%u", socket_io, lcore, port);
+			ring =
+			    rte_ring_create (name, app.ring_tx_size, socket_io, RING_F_SP_ENQ | RING_F_SC_DEQ);
 			if (ring == NULL) {
 				rte_panic (
 				    "Cannot create ring to connect worker core %u with TX port "
@@ -331,9 +323,8 @@ static void check_all_ports_link_status (uint8_t port_num, uint32_t port_mask) {
 					    "Port %d Link Up - speed %u "
 					    "Mbps - %s\n",
 					    (uint8_t)portid, (unsigned)link.link_speed,
-					    (link.link_duplex == ETH_LINK_FULL_DUPLEX)
-					        ? ("full-duplex")
-					        : ("half-duplex\n"));
+					    (link.link_duplex == ETH_LINK_FULL_DUPLEX) ? ("full-duplex")
+					                                               : ("half-duplex\n"));
 				else
 					printf ("Port %d Link Down\n", (uint8_t)portid);
 				continue;
@@ -386,8 +377,7 @@ static void app_init_nics (void) {
 
 		/* Init port */
 		printf ("Initializing NIC port %u ...\n", (unsigned)port);
-		ret = rte_eth_dev_configure (port, (uint8_t)n_rx_queues,
-		                             (uint8_t)n_tx_queues, &port_conf);
+		ret = rte_eth_dev_configure (port, (uint8_t)n_rx_queues, (uint8_t)n_tx_queues, &port_conf);
 		if (ret < 0) {
 			rte_panic ("Cannot init NIC port %u (%d)\n", (unsigned)port, ret);
 		}
@@ -403,14 +393,12 @@ static void app_init_nics (void) {
 			socket = rte_lcore_to_socket_id (lcore);
 			pool   = app.lcore_params[lcore].pool;
 
-			printf ("Initializing NIC port %u RX queue %u ...\n",
-			        (unsigned)port, (unsigned)queue);
-			ret = rte_eth_rx_queue_setup (port, queue,
-			                              (uint16_t)app.nic_rx_ring_size,
-			                              socket, &rx_conf, pool);
+			printf ("Initializing NIC port %u RX queue %u ...\n", (unsigned)port, (unsigned)queue);
+			ret = rte_eth_rx_queue_setup (port, queue, (uint16_t)app.nic_rx_ring_size, socket,
+			                              &rx_conf, pool);
 			if (ret < 0) {
-				rte_panic ("Cannot init RX queue %u for port %u (%d)\n",
-				           (unsigned)queue, (unsigned)port, ret);
+				rte_panic ("Cannot init RX queue %u for port %u (%d)\n", (unsigned)queue,
+				           (unsigned)port, ret);
 			}
 		}
 
@@ -423,13 +411,12 @@ static void app_init_nics (void) {
 			app_get_lcore_for_nic_tx (port, queue, &lcore);
 			socket = rte_lcore_to_socket_id (lcore);
 
-			printf ("Initializing NIC port %u TX queue %u ...\n",
-			        (unsigned)port, (unsigned)queue);
-			ret = rte_eth_tx_queue_setup (
-			    port, queue, (uint16_t)app.nic_tx_ring_size, socket, &tx_conf);
+			printf ("Initializing NIC port %u TX queue %u ...\n", (unsigned)port, (unsigned)queue);
+			ret = rte_eth_tx_queue_setup (port, queue, (uint16_t)app.nic_tx_ring_size, socket,
+			                              &tx_conf);
 			if (ret < 0) {
-				rte_panic ("Cannot init TX queue %u for port %u (%d)\n",
-				           (unsigned)queue, (unsigned)port, ret);
+				rte_panic ("Cannot init TX queue %u for port %u (%d)\n", (unsigned)queue,
+				           (unsigned)port, ret);
 			}
 		}
 
@@ -441,9 +428,8 @@ static void app_init_nics (void) {
 
 		// get current mac addr
 		rte_eth_macaddr_get (port, (struct ether_addr *)(icmppkt + 6));
-		printf ("Default ETHOrig set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX",
-		        icmppkt[6], icmppkt[7], icmppkt[8], icmppkt[9], icmppkt[10],
-		        icmppkt[11]);
+		printf ("Default ETHOrig set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX", icmppkt[6], icmppkt[7],
+		        icmppkt[8], icmppkt[9], icmppkt[10], icmppkt[11]);
 
 		// set IP Checksum
 		struct ipv4_hdr *hdr = (struct ipv4_hdr *)(icmppkt + 6 + 6 + 2);
