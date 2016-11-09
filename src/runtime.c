@@ -150,6 +150,7 @@ unsigned sndpktlen = sizeof(icmppkt);
 
 int doChecksum = 0;
 int autoIncNum = 0;
+int selectiveTS = 0; // Selective Timestamping
 int hwTimeTest = 0;
 int bandWidthMeasure = 0;
 uint64_t trainLen   = 0;
@@ -206,12 +207,6 @@ app_lcore_io_rx(
 							hwDelta = latencyStats[k].hwTime;
 						}
 					if(lastTime!=0){
-						/*if(hwTimeTest){
-							latencyStats[k].hwTime.tv_sec += hwRelation.tv_sec;
-							latencyStats[k].hwTime.tv_nsec+= hwRelation.tv_nsec;
-							
-							printf(" hwLatency %lu.%lu",latencyStats[k].hwTime.tv_sec,latencyStats[k].hwTime.tv_nsec);
-						}*/
 						printf(" insta-BandWidth %lf Gbps",(latencyStats[k].pktLen/1000000000.)/( ((double)latencyStats[k].recvTime - lastTime) /1000000000.));
 					}else{
 						if(hwTimeTest){
@@ -436,11 +431,6 @@ app_lcore_io_tx_bw(
 		uint32_t n_mbufs, n_pkts;
 		n_mbufs = bsz_wr;
 
-/*		if(!rte_pktmbuf_alloc_bulk(app.pools[0],lp->tx.mbuf_out[port].array,bsz_wr)){
-			printf("errorazo\n");
-			continue;
-		}*/
-
 		for (k = 0; k < n_mbufs; k ++) {
 			lp->tx.mbuf_out[port].array[k] = rte_ctrlmbuf_alloc(app.pools[0]) ;
 			if(lp->tx.mbuf_out[port].array[k]==NULL){
@@ -451,19 +441,8 @@ app_lcore_io_tx_bw(
 			lp->tx.mbuf_out[port].array[k]->pkt_len = sndpktlen;
 			lp->tx.mbuf_out[port].array[k]->data_len = sndpktlen;
 			lp->tx.mbuf_out[port].array[k]->port = port;
-			
-			//if(autoIncNum){
-			//	(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
-			//}
 
 			memcpy(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k]),icmppkt,icmppktlen);
-			//*((hptl_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+sndpktlen-8)) = hptl_get();
-
-			//if(doChecksum){
-			//	uint16_t cksum;
-			//	cksum = rte_raw_cksum (rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart, sndpktlen-icmpStart);
-			//	*((uint16_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
-			//}
 		}
 
 		n_pkts = rte_eth_tx_burst(
@@ -471,20 +450,6 @@ app_lcore_io_tx_bw(
 			queue,
 			lp->tx.mbuf_out[port].array,
 			n_mbufs);
-		
-		//hptl_waitns(WAITTIME);
-
-		//if (unlikely(n_pkts < n_mbufs)){
-		//	rte_ctrlmbuf_free(tmpbuf);
-		//}else{
-		//	lp->tx.mbuf_out[port].n_mbufs++;
-		//	if(trainLen && lp->tx.mbuf_out[port].n_mbufs >= trainLen){
-		//		hptl_waitns(trainTime*1000000UL);
-		//		continueRX = 0;
-		//		hptl_waitns(trainTime*1000000UL);
-		//		exit(1);
-		//	}
-		//}
 
 #if APP_STATS
 		lp->tx.nic_queues_iters[i] ++;
@@ -520,10 +485,99 @@ app_lcore_io_tx_bw(
 
 
 		if (unlikely(n_pkts < n_mbufs)) {
-			//printf("Errorcito\n");
 			for (k = n_pkts; k < n_mbufs; k ++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
-//				rte_pktmbuf_free(pkt_to_free);
+				rte_ctrlmbuf_free(pkt_to_free);
+			}
+		}
+	}
+}
+
+static inline void
+app_lcore_io_tx_sts(
+	struct app_lcore_params_io *lp,
+	uint32_t bsz_wr)
+{
+	uint32_t i;
+	uint32_t k;
+
+	for (i = 0; i < lp->tx.n_nic_queues; i ++) {
+		uint8_t port = lp->tx.nic_queues[i].port;
+		uint8_t queue = lp->tx.nic_queues[i].queue;
+		uint32_t n_mbufs, n_pkts;
+		n_mbufs = bsz_wr;
+
+		for (k = 0; k < n_mbufs; k ++) {
+			lp->tx.mbuf_out[port].array[k] = rte_ctrlmbuf_alloc(app.pools[0]) ;
+			if(lp->tx.mbuf_out[port].array[k]==NULL){
+				n_mbufs=k;
+				break;
+			}
+
+			lp->tx.mbuf_out[port].array[k]->pkt_len = sndpktlen;
+			lp->tx.mbuf_out[port].array[k]->data_len = sndpktlen;
+			lp->tx.mbuf_out[port].array[k]->port = port;
+			
+			if((k == n_mbufs-1) && autoIncNum){
+				(*((uint16_t*)(icmppkt+icmpStart+2+2+2)))++;
+			}
+
+			memcpy(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k]),icmppkt,icmppktlen);
+
+			if(k == n_mbufs-1){
+				*((hptl_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+sndpktlen-8)) = hptl_get();
+
+				if(doChecksum){
+					uint16_t cksum;
+					cksum = rte_raw_cksum (rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart, sndpktlen-icmpStart);
+					*((uint16_t*)(rte_ctrlmbuf_data(lp->tx.mbuf_out[port].array[k])+icmpStart+2)) = ((cksum == 0xffff) ? cksum : ~cksum);
+				}
+			}
+		}
+
+		n_pkts = rte_eth_tx_burst(
+			port,
+			queue,
+			lp->tx.mbuf_out[port].array,
+			n_mbufs);
+
+#if APP_STATS
+		lp->tx.nic_queues_iters[i] ++;
+		lp->tx.nic_queues_count[i] += n_mbufs;
+		if (unlikely(lp->tx.nic_queues_iters[i] == APP_STATS)) {
+			struct rte_eth_stats stats;
+			struct timeval start_ewr, end_ewr;
+
+			rte_eth_stats_get(port, &stats);
+			gettimeofday(&lp->tx.end_ewr, NULL);
+
+			start_ewr = lp->tx.start_ewr; end_ewr = lp->tx.end_ewr;
+
+			if(queue==0)
+			{
+				printf("NIC TX port %u: drop ratio = %.2f (%u/%u) usefull-speed: %lf Gbps, link-speed: %lf Gbps (%.1lf pkts/s)\n",
+					(unsigned) port,
+					(double) stats.oerrors / (double) (stats.oerrors + stats.opackets),
+					(uint32_t) stats.opackets, (uint32_t) stats.oerrors,
+					(  stats.obytes                                                /(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec))/1000000.))/(1000*1000*1000./8.),
+					(((stats.obytes)+stats.opackets*(/*4crc+8prelud+12ifg*/(8+12)))/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec))/1000000.))/(1000*1000*1000./8.),
+					stats.opackets/(((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) - (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /1000000.)
+					);
+
+				rte_eth_stats_reset (port);
+				lp->tx.start_ewr = end_ewr; // Updating start
+			}
+
+			lp->tx.nic_queues_iters[i] = 0;
+			lp->tx.nic_queues_count[i] = 0;
+		}
+#endif
+
+
+		if (unlikely(n_pkts < n_mbufs)) {
+			printf("Ts packet unsended\n");
+			for (k = n_pkts; k < n_mbufs; k ++) {
+				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free(pkt_to_free);
 			}
 		}
@@ -589,6 +643,18 @@ app_lcore_main_loop_io(void)
 
 			if (likely(lp->tx.n_nic_queues > 0)) {
 				app_lcore_io_tx_bw(lp, app.burst_size_io_tx_write); 
+			}
+
+			i ++;
+		}
+	}else if (selectiveTS){  // measure bw & latency, performing a selective Timestamping
+		for ( ; ; ) {
+			if (likely(lp->rx.n_nic_queues > 0)) {
+				app_lcore_io_rx_sts(lp, bsz_rx_rd); 
+			}
+
+			if (likely(lp->tx.n_nic_queues > 0)) {
+				app_lcore_io_tx_sts(lp); 
 			}
 
 			i ++;
