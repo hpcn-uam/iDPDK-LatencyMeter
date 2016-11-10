@@ -693,6 +693,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
 			}
+			app_lcore_io_tx_sts (lp, bsz_wr-n_pkts);
 		}
 	}
 }
