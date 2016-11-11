@@ -431,12 +431,10 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			if (stats.oerrors > 0) {
 				printf ("%ld Packets errored in TX\n", stats.oerrors);
 			}
-			rte_eth_stats_get (0, &stats);
-			printf ("Port %d stats: %lu/%lu Pkts  sent/recv\n", 0,	stats.opackets, stats.ipackets);
-			printf ("               %lu/%lu Bytes sent/recv\n", 		stats.obytes, stats.ibytes);
-			rte_eth_stats_get (1, &stats);
-			printf ("Port %d stats: %lu/%lu Pkts  sent/recv\n", 1,	stats.opackets, stats.ipackets);
-			printf ("               %lu/%lu Bytes sent/recv\n", 		stats.obytes, stats.ibytes);
+			rte_eth_stats_get (port, &stats);
+			printf ("Port %d stats: %lu/%lu Pkts  sent/recv\n", port, stats.opackets,
+			        stats.ipackets);
+			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
 			exit (0);
 		}
 
@@ -635,11 +633,9 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 
 			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]), icmppkt, icmppktlen);
 
-			if (k == n_mbufs - 1) {
+			if (k == 0) {
 				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + sndpktlen -
 				               16)) = tspacketId;
-				*((hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + sndpktlen - 8)) =
-				    hptl_get ();
 
 				if (doChecksum) {
 					uint16_t cksum;
@@ -651,6 +647,10 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				}
 			}
 		}
+
+		// TS the first pkt
+		*((hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + sndpktlen - 8)) =
+		    hptl_get ();
 
 		n_pkts = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array, n_mbufs);
 
@@ -702,7 +702,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
 			}
-			app_lcore_io_tx_sts (lp, bsz_wr - n_pkts);
+			app_lcore_io_tx_bw (lp, bsz_wr - n_pkts);
 		}
 	}
 }
