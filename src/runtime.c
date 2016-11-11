@@ -431,6 +431,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			if (stats.oerrors > 0) {
 				printf ("%ld Packets errored in TX\n", stats.oerrors);
 			}
+			printf ("Global Stats: %lu/%lu Pkts sent/recv\n", stats.opackets, stats.ipackets);
+			printf ("              %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
 			exit (0);
 		}
 
