@@ -428,6 +428,9 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			if (stats.ierrors > 0) {
 				printf ("%ld Packets errored/dropped\n", stats.ierrors);
 			}
+			if (stats.oerrors > 0) {
+				printf ("%ld Packets errored in TX\n", stats.oerrors);
+			}
 			exit (0);
 		}
 
@@ -693,7 +696,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
 			}
-			app_lcore_io_tx_sts (lp, bsz_wr-n_pkts);
+			app_lcore_io_tx_sts (lp, bsz_wr - n_pkts);
 		}
 	}
 }
