@@ -696,13 +696,13 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		}
 #endif
 
-		if (unlikely (n_pkts < n_mbufs)) {
+		while (unlikely (n_pkts < n_mbufs)) {
+			n_pkts += rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array+n_pkts, n_mbufs-n_pkts);
 			// printf ("Ts packet unsended\n");
-			for (k = n_pkts; k < n_mbufs; k++) {
+			/*for (k = n_pkts; k < n_mbufs; k++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
-			}
-			app_lcore_io_tx_bw (lp, bsz_wr - n_pkts);
+			}*/
 		}
 	}
 }
