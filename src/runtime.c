@@ -436,14 +436,21 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 				printf ("%ld Packets errored in TX\n", stats.oerrors);
 			}
 			rte_eth_stats_get (port, &stats);
-			printf (
-			    "Port %d stats: %lu/%lu Pkts  sent/recv\n", port, stats.opackets, stats.ipackets);
+			printf ("Port %d stats: %lu/%lu/%lu/%lu Pkts  sent/recv/ierror/imissed\n",
+			        port,
+			        stats.opackets,
+			        stats.ipackets,
+			        stats.ierrors,
+			        stats.imissed);
 			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
 			// DEBUG, MUST REMOVE IN RELEASE
 			port = 1 - port;
 			rte_eth_stats_get (port, &stats);
-			printf (
-			    "Port %d stats: %lu/%lu Pkts  sent/recv\n", port, stats.opackets, stats.ipackets);
+			printf ("Port %d stats: %lu/%lu/%lu Pkts  sent/recv/oerrors\n",
+			        port,
+			        stats.opackets,
+			        stats.ipackets,
+			        stats.oerrors);
 			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
 			exit (0);
 		}
