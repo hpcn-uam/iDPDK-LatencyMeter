@@ -6,7 +6,7 @@
 #define HBC_str(a) #a
 
 //The current version
-#define hptl_VERSION_trash v0.9-13-g2765e12
+#define hptl_VERSION_trash v0.9.5-10-g3e7e642
 
 #define hptl_VERSION HBC_xstr(hptl_VERSION_trash)
 
@@ -15,5 +15,6 @@
 
 #define HPTL_TSC
 #define HPTL_CLOCKREALTIME
+/* #undef HPTL_ONLYLINUXAPI */
 
 #endif
