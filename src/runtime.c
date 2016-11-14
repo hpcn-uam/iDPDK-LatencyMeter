@@ -272,14 +272,11 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 				continueRX = 0;
 		}
 
-#if APP_IO_RX_DROP_ALL_PACKETS
+		// Drop all packets
 		for (j = 0; j < n_mbufs; j++) {
 			struct rte_mbuf *pkt = lp->rx.mbuf_in.array[j];
 			rte_pktmbuf_free (pkt);
 		}
-
-		continue;
-#endif
 	}
 }
 
@@ -404,7 +401,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 					}
 					if (lastTime != 0) {
 						printf (" insta-BandWidth %lf Gbps",
-						        (latencyStats[k].pktLen / 1000000000.) /
+						        (latencyStats[k].totalBytes / 1000000000.) /
 						            (((double)latencyStats[k].recvTime - lastTime) / 1000000000.));
 					} else {
 						if (hwTimeTest) {
@@ -415,7 +412,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 						firstTime = latencyStats[k].recvTime;
 					}
 					lastTime = latencyStats[k].recvTime;
-					totalBytes += latencyStats[k].pktLen;
+					totalBytes += latencyStats[k].totalBytes;
 					printf ("\n");
 				} else {
 					printf ("%d: Recved but ignored\n", k + 1);
@@ -453,14 +450,20 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			uint8_t *data = (uint8_t *)rte_ctrlmbuf_data (lp->rx.mbuf_in.array[i]);
 			uint32_t len  = rte_ctrlmbuf_len (lp->rx.mbuf_in.array[i]);
 
+			lp->rx.nic_queues_iters[queue] += len;
+
 			if (*(uint64_t *)(data + len - 16) == tspacketId) {  // paquete marcado
 				if (trainLen && (*(uint16_t *)(data + icmpStart + 2 + 2) ==
 				                 *(uint16_t *)(icmppkt + icmpStart + 2 + 2))) {
 					// Latency ounters
-					latencyStats[counter].recvTime = hptl_get ();
-					latencyStats[counter].sentTime = (*(hptl_t *)(data + len - 8));
-					latencyStats[counter].pktLen   = len;
-					latencyStats[counter].recved = 1;
+					latencyStats[counter].recvTime   = hptl_get ();
+					latencyStats[counter].sentTime   = (*(hptl_t *)(data + len - 8));
+					latencyStats[counter].pktLen     = len;
+					latencyStats[counter].totalBytes = lp->rx.nic_queues_iters[queue];
+					latencyStats[counter].recved     = 1;
+
+					lp->rx.nic_queues_iters[queue] = 0;  // reset counter
+
 					if (hwTimeTest) {
 						const float fpgaConvRate = 4.294967296;
 						latencyStats[counter].hwTime.tv_sec =
