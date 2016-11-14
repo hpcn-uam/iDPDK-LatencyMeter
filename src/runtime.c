@@ -439,6 +439,12 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			printf (
 			    "Port %d stats: %lu/%lu Pkts  sent/recv\n", port, stats.opackets, stats.ipackets);
 			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
+			// DEBUG, MUST REMOVE IN RELEASE
+			port = 1 - port;
+			rte_eth_stats_get (port, &stats);
+			printf (
+			    "Port %d stats: %lu/%lu Pkts  sent/recv\n", port, stats.opackets, stats.ipackets);
+			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
 			exit (0);
 		}
 
