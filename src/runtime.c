@@ -649,6 +649,10 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + sndpktlen -
 				               16)) = tspacketId;
 
+				if (autoIncNum) {
+					(*((uint16_t *)(icmppkt + icmpStart + 2 + 2 + 2)))++;
+				}
+
 				if (doChecksum) {
 					uint16_t cksum;
 					cksum = rte_raw_cksum (
