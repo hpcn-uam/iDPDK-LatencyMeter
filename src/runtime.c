@@ -442,7 +442,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			        stats.ipackets,
 			        stats.ierrors,
 			        stats.imissed);
-			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
+			printf ("		%lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
+			printf ("		%lu/%lu Queue error sent/recv\n", stats.q_errors, stats.rx_nombuf);
 			// DEBUG, MUST REMOVE IN RELEASE
 			port = 1 - port;
 			rte_eth_stats_get (port, &stats);
@@ -451,7 +452,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			        stats.opackets,
 			        stats.ipackets,
 			        stats.oerrors);
-			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
+			printf ("		%lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
+			printf ("		%lu/%lu Queue error sent/recv\n", stats.q_errors, stats.rx_nombuf);
 			exit (0);
 		}
 
