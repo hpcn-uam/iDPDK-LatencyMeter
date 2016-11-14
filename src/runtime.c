@@ -190,7 +190,8 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
-						printf (" hwTime %lu.%lu", latencyStats[k].hwTime.tv_sec,
+						printf (" hwTime %lu.%lu",
+						        latencyStats[k].hwTime.tv_sec,
 						        latencyStats[k].hwTime.tv_nsec);
 						if (lastTime != 0) {
 							printf (" hwDeltaLatency %lu.%lu",
@@ -267,7 +268,8 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 
 			// end if all packets have been recved
 			counter++;
-			if (counter == trainLen) continueRX = 0;
+			if (counter == trainLen)
+				continueRX = 0;
 		}
 
 #if APP_IO_RX_DROP_ALL_PACKETS
@@ -314,7 +316,8 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 				printf ("NIC port %u: drop ratio = %.2f (%u/%u) speed: %lf Gbps (%.1lf pkts/s)\n",
 				        (unsigned)port,
 				        (double)stats.ierrors / (double)(stats.ierrors + stats.ipackets),
-				        (uint32_t)stats.ipackets, (uint32_t)stats.ierrors,
+				        (uint32_t)stats.ipackets,
+				        (uint32_t)stats.ierrors,
 				        (((stats.ibytes) + stats.ipackets * (/*4crc+8prelud+12ifg*/ (8 + 12))) /
 				         (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
 				           (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
@@ -326,9 +329,12 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 #ifdef QUEUE_STATS
 			}
 			printf (
-			    "NIC port %u:%u: drop ratio = %.2f (%u/%u) speed %.1lf pkts/s\n", (unsigned)port,
-			    queue, (double)stats.ierrors / (double)(stats.ierrors + lp->rx.nic_queues_count[i]),
-			    (uint32_t)lp->rx.nic_queues_count[i], (uint32_t)stats.ierrors,
+			    "NIC port %u:%u: drop ratio = %.2f (%u/%u) speed %.1lf pkts/s\n",
+			    (unsigned)port,
+			    queue,
+			    (double)stats.ierrors / (double)(stats.ierrors + lp->rx.nic_queues_count[i]),
+			    (uint32_t)lp->rx.nic_queues_count[i],
+			    (uint32_t)stats.ierrors,
 			    lp->rx.nic_queues_count[i] / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
 			                                   (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
 			                                  1000000.));
@@ -386,7 +392,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
-						printf (" hwTime %lu.%lu", latencyStats[k].hwTime.tv_sec,
+						printf (" hwTime %lu.%lu",
+						        latencyStats[k].hwTime.tv_sec,
 						        latencyStats[k].hwTime.tv_nsec);
 						if (lastTime != 0) {
 							printf (" hwDeltaLatency %lu.%lu",
@@ -432,8 +439,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 				printf ("%ld Packets errored in TX\n", stats.oerrors);
 			}
 			rte_eth_stats_get (port, &stats);
-			printf ("Port %d stats: %lu/%lu Pkts  sent/recv\n", port, stats.opackets,
-			        stats.ipackets);
+			printf (
+			    "Port %d stats: %lu/%lu Pkts  sent/recv\n", port, stats.opackets, stats.ipackets);
 			printf ("               %lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
 			exit (0);
 		}
@@ -464,7 +471,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 
 					// end if all packets have been recved
 					counter++;
-					if (counter == trainLen) continueRX = 0;
+					if (counter == trainLen)
+						continueRX = 0;
 				}
 			}
 		}
@@ -574,7 +582,8 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 				    "link-speed: %lf Gbps (%.1lf pkts/s)\n",
 				    (unsigned)port,
 				    (double)stats.oerrors / (double)(stats.oerrors + stats.opackets),
-				    (uint32_t)stats.opackets, (uint32_t)stats.oerrors,
+				    (uint32_t)stats.opackets,
+				    (uint32_t)stats.oerrors,
 				    (stats.obytes / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
 				                      (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
 				                     1000000.)) /
@@ -673,7 +682,8 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				    "link-speed: %lf Gbps (%.1lf pkts/s)\n",
 				    (unsigned)port,
 				    (double)stats.oerrors / (double)(stats.oerrors + stats.opackets),
-				    (uint32_t)stats.opackets, (uint32_t)stats.oerrors,
+				    (uint32_t)stats.opackets,
+				    (uint32_t)stats.oerrors,
 				    (stats.obytes / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
 				                      (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
 				                     1000000.)) /
@@ -697,11 +707,12 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 #endif
 
 		while (unlikely (n_pkts < n_mbufs)) {
-			n_pkts += rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array+n_pkts, n_mbufs-n_pkts);
+			n_pkts += rte_eth_tx_burst (
+			    port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
 			// printf ("Ts packet unsended\n");
 			/*for (k = n_pkts; k < n_mbufs; k++) {
-				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
-				rte_ctrlmbuf_free (pkt_to_free);
+			    struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
+			    rte_ctrlmbuf_free (pkt_to_free);
 			}*/
 		}
 	}
