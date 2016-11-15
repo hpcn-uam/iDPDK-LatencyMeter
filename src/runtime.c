@@ -727,15 +727,15 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			lp->tx.nic_queues_count[i] = 0;
 		}
 #endif
-		if(n_pkts==0){
+		if (n_pkts == 0) {
 			for (k = n_pkts; k < n_mbufs; k++) {
-			    struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
-			    rte_ctrlmbuf_free (pkt_to_free);
+				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
+				rte_ctrlmbuf_free (pkt_to_free);
 			}
-		}else{
+		} else {
 			while (unlikely (n_pkts < n_mbufs)) {
 				n_pkts += rte_eth_tx_burst (
-					port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
+				    port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
 			}
 		}
 	}
@@ -798,7 +798,7 @@ static void app_lcore_main_loop_io (void) {
 		}
 	} else if (selectiveTS) {  // measure bw & latency, performing a selective Timestamping
 		// Send a pkt-burst to fill output queues
-		app_lcore_io_tx_bw (lp, app.nic_tx_ring_size-1);
+		app_lcore_io_tx_bw (lp, app.nic_tx_ring_size - 1);
 
 		for (;;) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
