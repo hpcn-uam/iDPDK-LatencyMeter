@@ -637,6 +637,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 	uint32_t i;
 	uint32_t k;
 	static uint64_t debug_npakets = 0;
+	static uint64_t debug_npaketsTs = 0;
 
 	for (i = 0; i < lp->tx.n_nic_queues; i++) {
 		uint8_t port  = lp->tx.nic_queues[i].port;
@@ -662,6 +663,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]), icmppkt, icmppktlen);
 
 			if (k == 0) {
+				debug_npaketsTs++;
 				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + sndpktlen -
 				               16)) = tspacketId;
 
@@ -688,6 +690,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		debug_npakets += n_pkts;
 
 		if (n_pkts == 0) {			
+			debug_npaketsTs--;
 			struct rte_eth_stats stats;
 			rte_eth_stats_get (port, &stats);
 			printf ("Port %d stats: %lu/%lu/%lu/%lu Pkts  sent/recv/ierror/imissed\n",
@@ -698,7 +701,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			        stats.imissed);
 			printf ("		%lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
 			printf ("		%lu/%lu Queue error sent/recv\n", stats.q_errors[0], stats.rx_nombuf);
-			printf ("		%lu pkts supuestamente enviados\n", debug_npakets);
+			printf ("		%lu/%lu pkts supuestamente enviados\n", debug_npakets, debug_npaketsTs);
 			for (k = n_pkts; k < n_mbufs; k++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
