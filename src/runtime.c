@@ -636,7 +636,7 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t bsz_wr) {
 	uint32_t i;
 	uint32_t k;
-	static debug_npakets = 0;
+	static uint64_t debug_npakets = 0;
 
 	for (i = 0; i < lp->tx.n_nic_queues; i++) {
 		uint8_t port  = lp->tx.nic_queues[i].port;
@@ -687,7 +687,8 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		n_pkts = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array, n_mbufs);
 		debug_npakets += n_pkts;
 
-		if (n_pkts == 0) {
+		if (n_pkts == 0) {			
+			struct rte_eth_stats stats;
 			rte_eth_stats_get (port, &stats);
 			printf ("Port %d stats: %lu/%lu/%lu/%lu Pkts  sent/recv/ierror/imissed\n",
 			        port,
