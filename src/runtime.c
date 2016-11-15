@@ -636,6 +636,7 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t bsz_wr) {
 	uint32_t i;
 	uint32_t k;
+	static debug_npakets = 0;
 
 	for (i = 0; i < lp->tx.n_nic_queues; i++) {
 		uint8_t port  = lp->tx.nic_queues[i].port;
@@ -684,16 +685,30 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		    hptl_get ();
 
 		n_pkts = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array, n_mbufs);
+		debug_npakets += n_pkts;
 
 		if (n_pkts == 0) {
+			rte_eth_stats_get (port, &stats);
+			printf ("Port %d stats: %lu/%lu/%lu/%lu Pkts  sent/recv/ierror/imissed\n",
+			        port,
+			        stats.opackets,
+			        stats.ipackets,
+			        stats.ierrors,
+			        stats.imissed);
+			printf ("		%lu/%lu Bytes sent/recv\n", stats.obytes, stats.ibytes);
+			printf ("		%lu/%lu Queue error sent/recv\n", stats.q_errors[0], stats.rx_nombuf);
+			printf ("		%lu pkts supuestamente enviados\n", debug_npakets);
 			for (k = n_pkts; k < n_mbufs; k++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 				rte_ctrlmbuf_free (pkt_to_free);
 			}
 		} else {
 			while (unlikely (n_pkts < n_mbufs)) {
-				n_pkts += rte_eth_tx_burst (
+				uint64_t tmp;
+				tmp = rte_eth_tx_burst (
 				    port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
+				n_pkts += tmp;
+				debug_npakets += tmp;
 			}
 		}
 	}
