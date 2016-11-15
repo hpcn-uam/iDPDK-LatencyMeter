@@ -796,6 +796,9 @@ static void app_lcore_main_loop_io (void) {
 			i++;
 		}
 	} else if (selectiveTS) {  // measure bw & latency, performing a selective Timestamping
+		// Send a pkt-burst to fill output queues
+		app_lcore_io_tx_bw (lp, app.nic_tx_ring_size-1);
+
 		for (;;) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
 				app_lcore_io_rx_sts (lp, bsz_rx_rd);
