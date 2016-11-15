@@ -685,48 +685,6 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 
 		n_pkts = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array, n_mbufs);
 
-#if APP_STATS
-		lp->tx.nic_queues_iters[i]++;
-		lp->tx.nic_queues_count[i] += n_mbufs;
-		if (unlikely (lp->tx.nic_queues_iters[i] == APP_STATS)) {
-			struct rte_eth_stats stats;
-			struct timeval start_ewr, end_ewr;
-
-			rte_eth_stats_get (port, &stats);
-			gettimeofday (&lp->tx.end_ewr, NULL);
-
-			start_ewr = lp->tx.start_ewr;
-			end_ewr   = lp->tx.end_ewr;
-
-			if (queue == 0) {
-				printf (
-				    "NIC TX port %u: drop ratio = %.2f (%u/%u) usefull-speed: %lf Gbps, "
-				    "link-speed: %lf Gbps (%.1lf pkts/s)\n",
-				    (unsigned)port,
-				    (double)stats.oerrors / (double)(stats.oerrors + stats.opackets),
-				    (uint32_t)stats.opackets,
-				    (uint32_t)stats.oerrors,
-				    (stats.obytes / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
-				                      (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
-				                     1000000.)) /
-				        (1000 * 1000 * 1000. / 8.),
-				    (((stats.obytes) + stats.opackets * (/*4crc+8prelud+12ifg*/ (8 + 12))) /
-				     (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
-				       (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
-				      1000000.)) /
-				        (1000 * 1000 * 1000. / 8.),
-				    stats.opackets / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
-				                       (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
-				                      1000000.));
-
-				rte_eth_stats_reset (port);
-				lp->tx.start_ewr = end_ewr;  // Updating start
-			}
-
-			lp->tx.nic_queues_iters[i] = 0;
-			lp->tx.nic_queues_count[i] = 0;
-		}
-#endif
 		if (n_pkts == 0) {
 			for (k = n_pkts; k < n_mbufs; k++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
