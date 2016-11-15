@@ -727,15 +727,16 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			lp->tx.nic_queues_count[i] = 0;
 		}
 #endif
-
-		while (unlikely (n_pkts < n_mbufs)) {
-			n_pkts += rte_eth_tx_burst (
-			    port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
-			// printf ("Ts packet unsended\n");
-			/*for (k = n_pkts; k < n_mbufs; k++) {
+		if(n_pkts==0){
+			for (k = n_pkts; k < n_mbufs; k++) {
 			    struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
 			    rte_ctrlmbuf_free (pkt_to_free);
-			}*/
+			}
+		}else{
+			while (unlikely (n_pkts < n_mbufs)) {
+				n_pkts += rte_eth_tx_burst (
+					port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
+			}
 		}
 	}
 }
