@@ -144,10 +144,13 @@ uint8_t icmppkt[] = {0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2,
                      0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
 
 const uint64_t tspacketId = 0xCACAFEA;
-const uint32_t tsoffset   = 52;
+const uint32_t tsoffset   = 42;
 
-unsigned icmppktlen = sizeof (icmppkt);
-unsigned sndpktlen  = sizeof (icmppkt);
+const unsigned icmppktlen   = sizeof (icmppkt);
+const unsigned icmpidoffset = 36;
+
+unsigned sndpktlen = sizeof (icmppkt);
+unsigned idoffset  = 36;  // = icmpidoffset
 
 int doChecksum       = 0;
 int autoIncNum       = 0;
@@ -242,8 +245,8 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 		}
 
 		if (trainLen &&
-		    (*(uint16_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + icmpStart + 2 +
-		                   2)) == (*(uint16_t *)(icmppkt + icmpStart + 2 + 2))) {
+		    (*(uint16_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + idoffset)) ==
+		        (*(uint16_t *)(icmppkt + idoffset))) {
 			// Add counter #recvPkts-1, so the data is saved in the structure as "the last packet of
 			// the bulk, instead of the first one"
 			counter += n_mbufs - 1;
@@ -351,14 +354,10 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 		}
 #endif
 
-#if APP_IO_RX_DROP_ALL_PACKETS
 		for (j = 0; j < n_mbufs; j++) {
 			struct rte_mbuf *pkt = lp->rx.mbuf_in.array[j];
 			rte_pktmbuf_free (pkt);
 		}
-
-		continue;
-#endif
 	}
 }
 
@@ -467,31 +466,28 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 
 			lp->rx.nic_queues_iters[queue] += len;
 
-			if (*(uint64_t *)(data + tsoffset - 8) == tspacketId) {  // paquete marcado
-				if (trainLen && (*(uint16_t *)(data + icmpStart + 2 + 2) ==
-				                 *(uint16_t *)(icmppkt + icmpStart + 2 + 2))) {
-					// Latency ounters
-					latencyStats[counter].recvTime   = hptl_get ();
-					latencyStats[counter].sentTime   = (*(hptl_t *)(data + tsoffset));
-					latencyStats[counter].pktLen     = len;
-					latencyStats[counter].totalBytes = lp->rx.nic_queues_iters[queue];
-					latencyStats[counter].recved     = 1;
+			if (*(uint64_t *)(data + idoffset) == tspacketId) {  // paquete marcado
+				// Latency ounters
+				latencyStats[counter].recvTime   = hptl_get ();
+				latencyStats[counter].sentTime   = (*(hptl_t *)(data + tsoffset));
+				latencyStats[counter].pktLen     = len;
+				latencyStats[counter].totalBytes = lp->rx.nic_queues_iters[queue];
+				latencyStats[counter].recved     = 1;
 
-					lp->rx.nic_queues_iters[queue] = 0;  // reset counter
+				lp->rx.nic_queues_iters[queue] = 0;  // reset counter
 
-					if (hwTimeTest) {
-						const float fpgaConvRate = 4.294967296;
-						latencyStats[counter].hwTime.tv_sec =
-						    ntohl (*(uint32_t *)(data + 50)) / fpgaConvRate;
-						latencyStats[counter].hwTime.tv_nsec =
-						    ntohl (*(uint32_t *)(data + 54)) / fpgaConvRate;
-					}
-
-					// end if all packets have been recved
-					counter++;
-					if (counter == trainLen)
-						continueRX = 0;
+				if (hwTimeTest) {
+					const float fpgaConvRate = 4.294967296;
+					latencyStats[counter].hwTime.tv_sec =
+					    ntohl (*(uint32_t *)(data + 50)) / fpgaConvRate;
+					latencyStats[counter].hwTime.tv_nsec =
+					    ntohl (*(uint32_t *)(data + 54)) / fpgaConvRate;
 				}
+
+				// end if all packets have been recved
+				counter++;
+				if (counter == trainLen)
+					continueRX = 0;
 			}
 		}
 
@@ -654,14 +650,10 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			lp->tx.mbuf_out[port].array[k]->data_len = sndpktlen;
 			lp->tx.mbuf_out[port].array[k]->port     = port;
 
-			if ((k == n_mbufs - 1) && autoIncNum) {
-				(*((uint16_t *)(icmppkt + icmpStart + 2 + 2 + 2)))++;
-			}
-
 			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]), icmppkt, icmppktlen);
 
 			if (k == 0) {
-				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + tsoffset - 8)) =
+				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + idoffset)) =
 				    tspacketId;
 
 				if (autoIncNum) {
