@@ -430,7 +430,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 
 			// Ignored / Dropped stats
 			if (ignored > 0) {
-				printf ("%ld Packets ignored\n", ignored);
+				printf ("%ld TS-Packets lost\n", ignored);
 			}
 			struct rte_eth_stats stats;
 			rte_eth_stats_get (port, &stats);
