@@ -401,9 +401,6 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
-						printf ("\n =%08lX.%08lX =\n",
-						        latencyStats[k].hwTime.tv_sec,
-						        latencyStats[k].hwTime.tv_nsec);
 						uint64_t fpgatime = ntohl (latencyStats[k].hwTime.tv_sec) * 1000000000 +
 						                    ntohl (latencyStats[k].hwTime.tv_nsec);
 						fpgatime /= fpgaConvRate;
