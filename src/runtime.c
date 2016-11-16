@@ -419,7 +419,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 					}
 					if (lastTime != 0) {
 						printf (" insta-BandWidth %lf Gbps",
-						        (latencyStats[k].totalBytes / 1000000000.) /
+						        (latencyStats[k].totalBytes * 8 / 1000000000.) /
 						            (((double)latencyStats[k].recvTime - lastTime) / 1000000000.));
 					} else {
 						if (hwTimeTest) {
@@ -437,8 +437,9 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 					ignored++;
 				}
 			}
-			printf ("Mean-BandWidth %lf Gbps\n",
-			        (totalBytes / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
+			printf (
+			    "Mean-BandWidth %lf Gbps\n",
+			    (totalBytes * 8 / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
 			printf ("Mean-Latency %lf ns\n", sumLatency / (((double)trainLen - ignored)));
 
 			// Ignored / Dropped stats
