@@ -321,9 +321,10 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 #endif
 				printf ("NIC port %u: drop ratio = %.2f (%u/%u) speed: %lf Gbps (%.1lf pkts/s)\n",
 				        (unsigned)port,
-				        (double)stats.ierrors / (double)(stats.ierrors + stats.ipackets),
+				        (double)(stats.ierrors + stats.imissed) /
+				            (double)((stats.ierrors + stats.imissed) + stats.ipackets),
 				        (uint32_t)stats.ipackets,
-				        (uint32_t)stats.ierrors,
+				        (uint32_t) (stats.ierrors + stats.imissed),
 				        (((stats.ibytes) + stats.ipackets * (/*4crc+8prelud+12ifg*/ (8 + 12))) /
 				         (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
 				           (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
