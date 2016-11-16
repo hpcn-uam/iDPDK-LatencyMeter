@@ -469,19 +469,18 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 		for (i = 0; i < n_mbufs; i++) {
 			uint8_t *data = (uint8_t *)rte_ctrlmbuf_data (lp->rx.mbuf_in.array[i]);
 			uint32_t len  = rte_ctrlmbuf_len (lp->rx.mbuf_in.array[i]);
-			uint16_t pktn = *(uint16_t *)(data + cntroffset);
-
-			if (autoIncNum) {
-				counter = pktn;
-				if (pktn >= trainLen) {
-					continueRX = 0;
-					continue;
-				}
-			}
 
 			lp->rx.nic_queues_iters[queue] += len;
 
 			if (*(uint16_t *)(data + idoffset) == (TSIDTYPE)tspacketId) {  // paquete marcado
+				if (autoIncNum) {
+					counter = *(uint16_t *)(data + cntroffset);
+					if (counter >= trainLen) {
+						continueRX = 0;
+						continue;
+					}
+				}
+
 				// Latency ounters
 				latencyStats[counter].recvTime   = hptl_get ();
 				latencyStats[counter].sentTime   = (*(hptl_t *)(data + tsoffset));
