@@ -146,11 +146,16 @@ uint8_t icmppkt[] = {0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2,
 const uint32_t tspacketId = 0xCACAFEA;
 const uint32_t tsoffset   = 44;
 
-const unsigned icmppktlen   = sizeof (icmppkt);
-const unsigned icmpidoffset = 36;
+const unsigned icmppktlen     = sizeof (icmppkt);
+const unsigned icmpidoffset   = 36;
+const unsigned icmpcntroffset = 38;
 
-unsigned sndpktlen = sizeof (icmppkt);
-unsigned idoffset  = 36;  // = icmpidoffset
+unsigned sndpktlen  = sizeof (icmppkt);
+unsigned idoffset   = 36;  // = icmpidoffset
+unsigned cntroffset = 38;  // = icmpcntroffset
+
+// counter used in TX pkts
+static unsigned pktcounter = 0;
 
 int doChecksum       = 0;
 int autoIncNum       = 0;
@@ -463,10 +468,19 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 		for (i = 0; i < n_mbufs; i++) {
 			uint8_t *data = (uint8_t *)rte_ctrlmbuf_data (lp->rx.mbuf_in.array[i]);
 			uint32_t len  = rte_ctrlmbuf_len (lp->rx.mbuf_in.array[i]);
+			uint16_t pktn = *(uint16_t *)(data + cntroffset);
+
+			if (autoIncNum) {
+				counter = pktn;
+				if (pktn >= trainLen) {
+					continueRX = 0;
+					continue;
+				}
+			}
 
 			lp->rx.nic_queues_iters[queue] += len;
 
-			if (*(uint32_t *)(data + idoffset) == tspacketId) {  // paquete marcado
+			if (*(uint16_t *)(data + idoffset) == tspacketId) {  // paquete marcado
 				// Latency ounters
 				latencyStats[counter].recvTime   = hptl_get ();
 				latencyStats[counter].sentTime   = (*(hptl_t *)(data + tsoffset));
@@ -653,11 +667,12 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]), icmppkt, icmppktlen);
 
 			if (k == 0) {
-				*((uint32_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + idoffset)) =
+				*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + idoffset)) =
 				    tspacketId;
 
 				if (autoIncNum) {
-					tspacketId++;
+					*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) +
+					               cntroffset)) = pktcounter++;
 				}
 			}
 		}
