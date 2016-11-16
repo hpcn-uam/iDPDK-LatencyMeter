@@ -145,7 +145,7 @@ uint8_t icmppkt[] = {0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2,
 
 #define TSIDTYPE uint16_t
 const uint32_t tspacketId = 0xCACACACA;
-const uint32_t tsoffset   = 44;
+const uint32_t tsoffset   = 40;
 
 const unsigned icmppktlen     = sizeof (icmppkt);
 const unsigned icmpidoffset   = 36;
@@ -693,7 +693,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		}
 
 		// TS the first pkt
-		*((hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset)) = hptl_get ();
+		*(hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset) = hptl_get ();
 
 		if (doChecksum) {
 			uint16_t cksum;
