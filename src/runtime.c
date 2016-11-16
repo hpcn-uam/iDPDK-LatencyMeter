@@ -677,7 +677,9 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			lp->tx.mbuf_out[port].array[k]->data_len = sndpktlen;
 			lp->tx.mbuf_out[port].array[k]->port     = port;
 
-			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]), icmppkt, icmppktlen);
+			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]),
+			        icmppkt,
+			        icmppktlen > sndpktlen ? sndpktlen : icmppktlen);
 
 			if (k == 0) {
 				*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + idoffset)) =
