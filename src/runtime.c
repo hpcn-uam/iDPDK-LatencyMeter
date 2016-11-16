@@ -420,7 +420,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 					totalBytes += latencyStats[k].totalBytes;
 					printf ("\n");
 				} else {
-					printf ("%d: Recved but ignored\n", k + 1);
+					printf ("%d: Pkt has not been seen\n", k + 1);
 					ignored++;
 				}
 			}
