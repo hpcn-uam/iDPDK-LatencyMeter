@@ -657,22 +657,21 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				    tspacketId;
 
 				if (autoIncNum) {
-					(*((uint16_t *)(icmppkt + icmpStart + 2 + 2 + 2)))++;
-				}
-
-				if (doChecksum) {
-					uint16_t cksum;
-					cksum = rte_raw_cksum (
-					    rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + icmpStart,
-					    sndpktlen - icmpStart);
-					*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + icmpStart +
-					               2)) = ((cksum == 0xffff) ? cksum : ~cksum);
+					tspacketId++;
 				}
 			}
 		}
 
 		// TS the first pkt
 		*((hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset)) = hptl_get ();
+
+		if (doChecksum) {
+			uint16_t cksum;
+			cksum = rte_raw_cksum (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + icmpStart,
+			                       sndpktlen - icmpStart);
+			*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + icmpStart + 2)) =
+			    ((cksum == 0xffff) ? cksum : ~cksum);
+		}
 
 		n_pkts = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array, n_mbufs);
 
