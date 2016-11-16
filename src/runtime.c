@@ -144,6 +144,7 @@ uint8_t icmppkt[] = {0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2,
                      0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
 
 const uint64_t tspacketId = 0xCACAFEA;
+const uint32_t tsoffset   = 52;
 
 unsigned icmppktlen = sizeof (icmppkt);
 unsigned sndpktlen  = sizeof (icmppkt);
@@ -250,8 +251,7 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 			// Latency ounters
 			latencyStats[counter].recvTime = hptl_get ();
 			latencyStats[counter].sentTime =
-			    (*(hptl_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) +
-			                 rte_ctrlmbuf_len (lp->rx.mbuf_in.array[n_mbufs - 1]) - 8));
+			    *(hptl_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + tsoffset);
 			latencyStats[counter].pktLen = rte_ctrlmbuf_len (lp->rx.mbuf_in.array[n_mbufs - 1]);
 			latencyStats[counter].recved = 1;
 			if (hwTimeTest) {
@@ -467,12 +467,12 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 
 			lp->rx.nic_queues_iters[queue] += len;
 
-			if (*(uint64_t *)(data + len - 16) == tspacketId) {  // paquete marcado
+			if (*(uint64_t *)(data + tsoffset - 8) == tspacketId) {  // paquete marcado
 				if (trainLen && (*(uint16_t *)(data + icmpStart + 2 + 2) ==
 				                 *(uint16_t *)(icmppkt + icmpStart + 2 + 2))) {
 					// Latency ounters
 					latencyStats[counter].recvTime   = hptl_get ();
-					latencyStats[counter].sentTime   = (*(hptl_t *)(data + len - 8));
+					latencyStats[counter].sentTime   = (*(hptl_t *)(data + tsoffset));
 					latencyStats[counter].pktLen     = len;
 					latencyStats[counter].totalBytes = lp->rx.nic_queues_iters[queue];
 					latencyStats[counter].recved     = 1;
@@ -526,7 +526,7 @@ static inline void app_lcore_io_tx (struct app_lcore_params_io *lp) {
 		}
 
 		memcpy (rte_ctrlmbuf_data (tmpbuf), icmppkt, icmppktlen - 8);
-		*((hptl_t *)(rte_ctrlmbuf_data (tmpbuf) + sndpktlen - 8)) = hptl_get ();
+		*((hptl_t *)(rte_ctrlmbuf_data (tmpbuf) + tsoffset)) = hptl_get ();
 
 		if (doChecksum) {
 			uint16_t cksum;
@@ -636,7 +636,7 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t bsz_wr) {
 	uint32_t i;
 	uint32_t k;
-	static uint64_t debug_npakets = 0;
+	static uint64_t debug_npakets   = 0;
 	static uint64_t debug_npaketsTs = 0;
 
 	for (i = 0; i < lp->tx.n_nic_queues; i++) {
@@ -664,8 +664,8 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 
 			if (k == 0) {
 				debug_npaketsTs++;
-				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + sndpktlen -
-				               16)) = tspacketId;
+				*((uint64_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + tsoffset - 8)) =
+				    tspacketId;
 
 				if (autoIncNum) {
 					(*((uint16_t *)(icmppkt + icmpStart + 2 + 2 + 2)))++;
@@ -683,13 +683,12 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		}
 
 		// TS the first pkt
-		*((hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + sndpktlen - 8)) =
-		    hptl_get ();
+		*((hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset)) = hptl_get ();
 
 		n_pkts = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array, n_mbufs);
 		debug_npakets += n_pkts;
 
-		if (n_pkts == 0) {			
+		if (n_pkts == 0) {
 			debug_npaketsTs--;
 			struct rte_eth_stats stats;
 			rte_eth_stats_get (port, &stats);
