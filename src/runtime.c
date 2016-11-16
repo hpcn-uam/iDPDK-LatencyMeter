@@ -155,6 +155,9 @@ unsigned sndpktlen  = sizeof (icmppkt);
 unsigned idoffset   = 36;  // = icmpidoffset
 unsigned cntroffset = 38;  // = icmpcntroffset
 
+// fpga timer conversion proportion
+const float fpgaConvRate = 4.294967296;
+
 // counter used in TX pkts
 static unsigned pktcounter = 0;
 
@@ -200,6 +203,13 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
+						// fpga time conversion
+						uint64_t fpgatime = ntohl (latencyStats[k].hwTime.tv_sec) * 1000000000 +
+						                    ntohl (latencyStats[k].hwTime.tv_nsec);
+						fpgatime /= fpgaConvRate;
+						latencyStats[k].hwTime.tv_sec  = fpgatime / 1000000000;
+						latencyStats[k].hwTime.tv_nsec = fpgatime % 1000000000;
+
 						printf (" hwTime %lu.%lu",
 						        latencyStats[k].hwTime.tv_sec,
 						        latencyStats[k].hwTime.tv_nsec);
@@ -264,15 +274,10 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 			latencyStats[counter].pktLen = rte_ctrlmbuf_len (lp->rx.mbuf_in.array[n_mbufs - 1]);
 			latencyStats[counter].recved = 1;
 			if (hwTimeTest) {
-				const float fpgaConvRate = 4.294967296;
 				latencyStats[counter].hwTime.tv_sec =
-				    ntohl (
-				        *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 50)) /
-				    fpgaConvRate;
+				    *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 50);
 				latencyStats[counter].hwTime.tv_nsec =
-				    ntohl (
-				        *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 54)) /
-				    fpgaConvRate;
+				    *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 54);
 			}
 
 			// end if all packets have been recved
@@ -395,6 +400,16 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
+						// fpga time conversion
+						printf ("\n =%08lX.%08lX =\n",
+						        latencyStats[k].hwTime.tv_sec,
+						        latencyStats[k].hwTime.tv_nsec);
+						uint64_t fpgatime = ntohl (latencyStats[k].hwTime.tv_sec) * 1000000000 +
+						                    ntohl (latencyStats[k].hwTime.tv_nsec);
+						fpgatime /= fpgaConvRate;
+						latencyStats[k].hwTime.tv_sec  = fpgatime / 1000000000;
+						latencyStats[k].hwTime.tv_nsec = fpgatime % 1000000000;
+
 						printf (" hwTime %lu.%lu",
 						        latencyStats[k].hwTime.tv_sec,
 						        latencyStats[k].hwTime.tv_nsec);
@@ -492,11 +507,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 				lp->rx.nic_queues_iters[queue] = 0;  // reset counter
 
 				if (hwTimeTest) {
-					const float fpgaConvRate = 4.294967296;
-					latencyStats[counter].hwTime.tv_sec =
-					    ntohl (*(uint32_t *)(data + 50)) / fpgaConvRate;
-					latencyStats[counter].hwTime.tv_nsec =
-					    ntohl (*(uint32_t *)(data + 54)) / fpgaConvRate;
+					latencyStats[counter].hwTime.tv_sec  = *(uint32_t *)(data + 50);
+					latencyStats[counter].hwTime.tv_nsec = *(uint32_t *)(data + 54);
 				}
 
 				// end if all packets have been recved
