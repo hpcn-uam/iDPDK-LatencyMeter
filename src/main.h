@@ -166,15 +166,6 @@
 #define APP_DEFAULT_NIC_TX_RS_THRESH 0
 #endif
 
-/* Software Rings */
-#ifndef APP_DEFAULT_RING_RX_SIZE
-#define APP_DEFAULT_RING_RX_SIZE 1024
-#endif
-
-#ifndef APP_DEFAULT_RING_TX_SIZE
-#define APP_DEFAULT_RING_TX_SIZE 1024
-#endif
-
 /* Bursts */
 #ifndef APP_MBUF_ARRAY_SIZE
 #define APP_MBUF_ARRAY_SIZE 512
@@ -187,39 +178,11 @@
 #error "APP_DEFAULT_BURST_SIZE_IO_RX_READ is too big"
 #endif
 
-#ifndef APP_DEFAULT_BURST_SIZE_IO_RX_WRITE
-#define APP_DEFAULT_BURST_SIZE_IO_RX_WRITE 144
-#endif
-#if (APP_DEFAULT_BURST_SIZE_IO_RX_WRITE > APP_MBUF_ARRAY_SIZE)
-#error "APP_DEFAULT_BURST_SIZE_IO_RX_WRITE is too big"
-#endif
-
-#ifndef APP_DEFAULT_BURST_SIZE_IO_TX_READ
-#define APP_DEFAULT_BURST_SIZE_IO_TX_READ 144
-#endif
-#if (APP_DEFAULT_BURST_SIZE_IO_TX_READ > APP_MBUF_ARRAY_SIZE)
-#error "APP_DEFAULT_BURST_SIZE_IO_TX_READ is too big"
-#endif
-
 #ifndef APP_DEFAULT_BURST_SIZE_IO_TX_WRITE
 #define APP_DEFAULT_BURST_SIZE_IO_TX_WRITE 144
 #endif
 #if (APP_DEFAULT_BURST_SIZE_IO_TX_WRITE > APP_MBUF_ARRAY_SIZE)
 #error "APP_DEFAULT_BURST_SIZE_IO_TX_WRITE is too big"
-#endif
-
-#ifndef APP_DEFAULT_BURST_SIZE_WORKER_READ
-#define APP_DEFAULT_BURST_SIZE_WORKER_READ 144
-#endif
-#if ((2 * APP_DEFAULT_BURST_SIZE_WORKER_READ) > APP_MBUF_ARRAY_SIZE)
-#error "APP_DEFAULT_BURST_SIZE_WORKER_READ is too big"
-#endif
-
-#ifndef APP_DEFAULT_BURST_SIZE_WORKER_WRITE
-#define APP_DEFAULT_BURST_SIZE_WORKER_WRITE 144
-#endif
-#if (APP_DEFAULT_BURST_SIZE_WORKER_WRITE > APP_MBUF_ARRAY_SIZE)
-#error "APP_DEFAULT_BURST_SIZE_WORKER_WRITE is too big"
 #endif
 
 /* Load balancing logic */
@@ -253,10 +216,6 @@ struct app_lcore_params_io {
 		} nic_queues[APP_MAX_NIC_RX_QUEUES_PER_IO_LCORE];
 		uint32_t n_nic_queues;
 
-		/* Rings */
-		struct rte_ring *rings[APP_MAX_WORKER_LCORES];
-		uint32_t n_rings;
-
 		/* Internal buffers */
 		struct app_mbuf_array mbuf_in;
 		struct app_mbuf_array mbuf_out[APP_MAX_WORKER_LCORES];
@@ -274,9 +233,6 @@ struct app_lcore_params_io {
 
 	/* I/O TX */
 	struct {
-		/* Rings */
-		struct rte_ring *rings[APP_MAX_NIC_PORTS][APP_MAX_WORKER_LCORES];
-
 		/* NIC */
 		struct {
 			uint8_t port;
@@ -299,42 +255,12 @@ struct app_lcore_params_io {
 	} tx;
 };
 
-struct app_lcore_params_worker {
-	/* Rings */
-	struct rte_ring *rings_in[APP_MAX_IO_LCORES];
-	uint32_t n_rings_in;
-	struct rte_ring *rings_out[APP_MAX_NIC_PORTS];
-
-	/* LPM table */
-	struct rte_lpm *lpm_table;
-	uint32_t worker_id;
-
-	/* Internal buffers */
-	struct app_mbuf_array mbuf_in;
-	struct app_mbuf_array mbuf_out[APP_MAX_NIC_PORTS];
-	uint8_t mbuf_out_flush[APP_MAX_NIC_PORTS];
-
-	/* Stats */
-	uint32_t rings_in_count[APP_MAX_IO_LCORES];
-	uint32_t rings_in_iters[APP_MAX_IO_LCORES];
-	uint32_t rings_out_count[APP_MAX_NIC_PORTS];
-	uint32_t rings_out_iters[APP_MAX_NIC_PORTS];
-};
-
 struct app_lcore_params {
-	union {
-		struct app_lcore_params_io io;
-		struct app_lcore_params_worker worker;
-	};
+	struct app_lcore_params_io io;
+
 	enum app_lcore_type type;
 	struct rte_mempool *pool;
 } __rte_cache_aligned;
-
-struct app_lpm_rule {
-	uint32_t ip;
-	uint8_t depth;
-	uint8_t if_out;
-};
 
 struct app_params {
 	/* lcore */
@@ -347,27 +273,13 @@ struct app_params {
 	/* mbuf pools */
 	struct rte_mempool *pools[APP_MAX_SOCKETS];
 
-	/* LPM tables */
-	struct rte_lpm *lpm_tables[APP_MAX_SOCKETS];
-	struct app_lpm_rule lpm_rules[APP_MAX_LPM_RULES];
-	uint32_t n_lpm_rules;
-
 	/* rings */
 	uint32_t nic_rx_ring_size;
 	uint32_t nic_tx_ring_size;
-	uint32_t ring_rx_size;
-	uint32_t ring_tx_size;
 
 	/* burst size */
 	uint32_t burst_size_io_rx_read;
-	uint32_t burst_size_io_rx_write;
-	uint32_t burst_size_io_tx_read;
 	uint32_t burst_size_io_tx_write;
-	uint32_t burst_size_worker_read;
-	uint32_t burst_size_worker_write;
-
-	/* load balancing */
-	uint8_t pos_lb;
 } __rte_cache_aligned;
 
 struct pktLatencyStat {

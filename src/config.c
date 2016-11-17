@@ -90,28 +90,14 @@ static const char usage[] =
 
     "                                                                               \n"
     "Application optional parameters:                                               \n"
-    "    --rsz \"A, B, C, D\" : Ring sizes                                          \n"
+    "    --rsz \"A, B\" : Ring sizes                                                \n"
     "           A = Size (in number of buffer descriptors) of each of the NIC RX    \n"
     "               rings read by the I/O RX lcores (default value is %u)           \n"
-    "           B = Size (in number of elements) of each of the SW rings used by the\n"
-    "               I/O RX lcores to send packets to worker lcores (default value is\n"
-    "               %u)                                                             \n"
-    "           C = Size (in number of elements) of each of the SW rings used by the\n"
-    "               worker lcores to send packets to I/O TX lcores (default value is\n"
-    "               %u)                                                             \n"
-    "           D = Size (in number of buffer descriptors) of each of the NIC TX    \n"
+    "           B = Size (in number of buffer descriptors) of each of the NIC TX    \n"
     "               rings written by I/O TX lcores (default value is %u)            \n"
-    "    --bsz \"(A, B), (C, D), (E, F)\" :  Burst sizes                            \n"
+    "    --bsz \"A, B\" :  Burst sizes                                              \n"
     "           A = I/O RX lcore read burst size from NIC RX (default value is %u)  \n"
-    "           B = I/O RX lcore write burst size to output SW rings (default value \n"
-    "               is %u)                                                          \n"
-    "           C = Worker lcore read burst size from input SW rings (default value \n"
-    "               is %u)                                                          \n"
-    "           D = Worker lcore write burst size to output SW rings (default value \n"
-    "               is %u)                                                          \n"
-    "           E = I/O TX lcore read burst size from input SW rings (default value \n"
-    "               is %u)                                                          \n"
-    "           F = I/O TX lcore write burst size to NIC TX (default value is %u)   \n"
+    "           B = I/O TX lcore write burst size to NIC TX (default value is %u)   \n"
 
     "                                                                               \n"
     "Packet-Sending parameters:                                                     \n"
@@ -133,14 +119,8 @@ static const char usage[] =
 void app_print_usage (void) {
 	printf (usage,
 	        APP_DEFAULT_NIC_RX_RING_SIZE,
-	        APP_DEFAULT_RING_RX_SIZE,
-	        APP_DEFAULT_RING_TX_SIZE,
 	        APP_DEFAULT_NIC_TX_RING_SIZE,
 	        APP_DEFAULT_BURST_SIZE_IO_RX_READ,
-	        APP_DEFAULT_BURST_SIZE_IO_RX_WRITE,
-	        APP_DEFAULT_BURST_SIZE_WORKER_READ,
-	        APP_DEFAULT_BURST_SIZE_WORKER_WRITE,
-	        APP_DEFAULT_BURST_SIZE_IO_TX_READ,
 	        APP_DEFAULT_BURST_SIZE_IO_TX_WRITE);
 }
 
@@ -340,18 +320,11 @@ static int parse_arg_rsz (const char *arg) {
 		return -1;
 	}
 
-	if (str_to_unsigned_vals (arg,
-	                          APP_ARG_RSZ_CHARS,
-	                          ',',
-	                          4,
-	                          &app.nic_rx_ring_size,
-	                          &app.ring_rx_size,
-	                          &app.ring_tx_size,
-	                          &app.nic_tx_ring_size) != 4)
+	if (str_to_unsigned_vals (
+	        arg, APP_ARG_RSZ_CHARS, ',', 2, &app.nic_rx_ring_size, &app.nic_tx_ring_size) != 2)
 		return -2;
 
-	if ((app.nic_rx_ring_size == 0) || (app.nic_tx_ring_size == 0) || (app.ring_rx_size == 0) ||
-	    (app.ring_tx_size == 0)) {
+	if ((app.nic_rx_ring_size == 0) || (app.nic_tx_ring_size == 0)) {
 		return -3;
 	}
 
@@ -363,53 +336,23 @@ static int parse_arg_rsz (const char *arg) {
 #endif
 
 static int parse_arg_bsz (const char *arg) {
-	const char *p = arg, *p0;
 	if (strnlen (arg, APP_ARG_BSZ_CHARS + 1) == APP_ARG_BSZ_CHARS + 1) {
 		return -1;
 	}
 
-	p0 = strchr (p++, ')');
-	if ((p0 == NULL) ||
-	    (str_to_unsigned_vals (
-	         p, p0 - p, ',', 2, &app.burst_size_io_rx_read, &app.burst_size_io_rx_write) != 2)) {
+	if (str_to_unsigned_vals (arg,
+	                          APP_ARG_RSZ_CHARS,
+	                          ',',
+	                          2,
+	                          &app.burst_size_io_rx_read,
+	                          &app.burst_size_io_tx_write) != 2)
 		return -2;
-	}
 
-	p = strchr (p0, '(');
-	if (p == NULL) {
-		return -3;
-	}
-
-	p0 = strchr (p++, ')');
-	if ((p0 == NULL) ||
-	    (str_to_unsigned_vals (
-	         p, p0 - p, ',', 2, &app.burst_size_worker_read, &app.burst_size_worker_write) != 2)) {
-		return -4;
-	}
-
-	p = strchr (p0, '(');
-	if (p == NULL) {
-		return -5;
-	}
-
-	p0 = strchr (p++, ')');
-	if ((p0 == NULL) ||
-	    (str_to_unsigned_vals (
-	         p, p0 - p, ',', 2, &app.burst_size_io_tx_read, &app.burst_size_io_tx_write) != 2)) {
-		return -6;
-	}
-
-	if ((app.burst_size_io_rx_read == 0) || (app.burst_size_io_rx_write == 0) ||
-	    (app.burst_size_worker_read == 0) || (app.burst_size_worker_write == 0) ||
-	    (app.burst_size_io_tx_read == 0) || (app.burst_size_io_tx_write == 0)) {
+	if ((app.burst_size_io_rx_read == 0) || (app.burst_size_io_tx_write == 0)) {
 		return -7;
 	}
 
 	if ((app.burst_size_io_rx_read > APP_MBUF_ARRAY_SIZE) ||
-	    (app.burst_size_io_rx_write > APP_MBUF_ARRAY_SIZE) ||
-	    (app.burst_size_worker_read > APP_MBUF_ARRAY_SIZE) ||
-	    (app.burst_size_worker_write > APP_MBUF_ARRAY_SIZE) ||
-	    ((2 * app.burst_size_io_tx_read) > APP_MBUF_ARRAY_SIZE) ||
 	    (app.burst_size_io_tx_write > APP_MBUF_ARRAY_SIZE)) {
 		return -8;
 	}
@@ -715,17 +658,11 @@ int app_parse_args (int argc, char **argv) {
 	if (arg_rsz == 0) {
 		app.nic_rx_ring_size = APP_DEFAULT_NIC_RX_RING_SIZE;
 		app.nic_tx_ring_size = APP_DEFAULT_NIC_TX_RING_SIZE;
-		app.ring_rx_size     = APP_DEFAULT_RING_RX_SIZE;
-		app.ring_tx_size     = APP_DEFAULT_RING_TX_SIZE;
 	}
 
 	if (arg_bsz == 0) {
-		app.burst_size_io_rx_read   = APP_DEFAULT_BURST_SIZE_IO_RX_READ;
-		app.burst_size_io_rx_write  = APP_DEFAULT_BURST_SIZE_IO_RX_WRITE;
-		app.burst_size_io_tx_read   = APP_DEFAULT_BURST_SIZE_IO_TX_READ;
-		app.burst_size_io_tx_write  = APP_DEFAULT_BURST_SIZE_IO_TX_WRITE;
-		app.burst_size_worker_read  = APP_DEFAULT_BURST_SIZE_WORKER_READ;
-		app.burst_size_worker_write = APP_DEFAULT_BURST_SIZE_WORKER_WRITE;
+		app.burst_size_io_rx_read  = APP_DEFAULT_BURST_SIZE_IO_RX_READ;
+		app.burst_size_io_tx_write = APP_DEFAULT_BURST_SIZE_IO_TX_WRITE;
 	}
 
 	if (optind >= 0)
@@ -953,20 +890,12 @@ void app_print_params (void) {
 	}
 
 	/* Rings */
-	printf ("Ring sizes: NIC RX = %u; Worker in = %u; Worker out = %u; NIC TX = %u;\n",
+	printf ("Ring sizes: NIC RX = %u; NIC TX = %u;\n",
 	        (unsigned)app.nic_rx_ring_size,
-	        (unsigned)app.ring_rx_size,
-	        (unsigned)app.ring_tx_size,
 	        (unsigned)app.nic_tx_ring_size);
 
 	/* Bursts */
-	printf (
-	    "Burst sizes: I/O RX (rd = %u, wr = %u); Worker (rd = %u, wr = %u); I/O TX (rd = %u, wr = "
-	    "%u)\n",
-	    (unsigned)app.burst_size_io_rx_read,
-	    (unsigned)app.burst_size_io_rx_write,
-	    (unsigned)app.burst_size_worker_read,
-	    (unsigned)app.burst_size_worker_write,
-	    (unsigned)app.burst_size_io_tx_read,
-	    (unsigned)app.burst_size_io_tx_write);
+	printf ("Burst sizes: I/O RX rd = %u; I/O TX wr = %u)\n",
+	        (unsigned)app.burst_size_io_rx_read,
+	        (unsigned)app.burst_size_io_tx_write);
 }

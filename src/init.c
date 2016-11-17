@@ -123,23 +123,6 @@ static struct rte_eth_txconf tx_conf = {
     .tx_rs_thresh   = APP_DEFAULT_NIC_TX_RS_THRESH,
 };
 
-static void app_assign_worker_ids (void) {
-	uint32_t lcore, worker_id;
-
-	/* Assign ID for each worker */
-	worker_id = 0;
-	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore].worker;
-
-		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
-			continue;
-		}
-
-		lp_worker->worker_id = worker_id;
-		worker_id++;
-	}
-}
-
 static void app_init_mbuf_pools (void) {
 	unsigned socket, lcore;
 
@@ -171,85 +154,11 @@ static void app_init_mbuf_pools (void) {
 	}
 }
 
-char record_File[256] = {0};
-
-static void app_init_rings_rx (void) {
-	unsigned lcore;
-
-	/* Initialize the rings for the RX side */
-	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_io *lp_io = &app.lcore_params[lcore].io;
-		unsigned socket_io, lcore_worker;
-
-		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) || (lp_io->rx.n_nic_queues == 0)) {
-			continue;
-		}
-
-		socket_io = rte_lcore_to_socket_id (lcore);
-
-		for (lcore_worker = 0; lcore_worker < APP_MAX_LCORES; lcore_worker++) {
-			char name[32];
-			struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore_worker].worker;
-			struct rte_ring *ring                     = NULL;
-
-			if (app.lcore_params[lcore_worker].type != e_APP_LCORE_WORKER) {
-				continue;
-			}
-
-			printf (
-			    "Creating ring to connect I/O lcore %u (socket %u) with worker "
-			    "lcore %u ...\n",
-			    lcore, socket_io, lcore_worker);
-			snprintf (name, sizeof (name), "app_ring_rx_s%u_io%u_w%u", socket_io, lcore,
-			          lcore_worker);
-			ring =
-			    rte_ring_create (name, app.ring_rx_size, socket_io, RING_F_SP_ENQ | RING_F_SC_DEQ);
-			if (ring == NULL) {
-				rte_panic (
-				    "Cannot create ring to connect I/O core %u with worker "
-				    "core %u\n",
-				    lcore, lcore_worker);
-			}
-
-			lp_io->rx.rings[lp_io->rx.n_rings] = ring;
-			lp_io->rx.n_rings++;
-
-			lp_worker->rings_in[lp_worker->n_rings_in] = ring;
-			lp_worker->n_rings_in++;
-		}
-	}
-
-	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_io *lp_io = &app.lcore_params[lcore].io;
-
-		if ((app.lcore_params[lcore].type != e_APP_LCORE_IO) || (lp_io->rx.n_nic_queues == 0)) {
-			continue;
-		}
-
-		if (lp_io->rx.n_rings != app_get_lcores_worker ()) {
-			rte_panic ("Algorithmic error (I/O RX rings)\n");
-		}
-	}
-
-	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore].worker;
-
-		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
-			continue;
-		}
-
-		if (lp_worker->n_rings_in != app_get_lcores_io_rx ()) {
-			rte_panic ("Algorithmic error (worker input rings)\n");
-		}
-	}
-}
-
 static void app_init_rings_tx (void) {
 	unsigned lcore;
 
 	/* Initialize the rings for the TX side */
 	for (lcore = 0; lcore < APP_MAX_LCORES; lcore++) {
-		struct app_lcore_params_worker *lp_worker = &app.lcore_params[lcore].worker;
 		unsigned port;
 
 		if (app.lcore_params[lcore].type != e_APP_LCORE_WORKER) {
@@ -257,10 +166,7 @@ static void app_init_rings_tx (void) {
 		}
 
 		for (port = 0; port < APP_MAX_NIC_PORTS; port++) {
-			char name[32];
-			struct app_lcore_params_io *lp_io = NULL;
-			struct rte_ring *ring;
-			uint32_t socket_io, lcore_io;
+			uint32_t lcore_io;
 
 			if (app_get_nic_tx_queues_per_port (port) == 0) {
 				continue;
@@ -273,26 +179,6 @@ static void app_init_rings_tx (void) {
 				    "and queue 0)\n",
 				    port);
 			}
-
-			lp_io     = &app.lcore_params[lcore_io].io;
-			socket_io = rte_lcore_to_socket_id (lcore_io);
-
-			printf (
-			    "Creating ring to connect worker lcore %u with TX port %u "
-			    "(through I/O lcore %u) (socket %u) ...\n",
-			    lcore, port, (unsigned)lcore_io, (unsigned)socket_io);
-			snprintf (name, sizeof (name), "app_ring_tx_s%u_w%u_p%u", socket_io, lcore, port);
-			ring =
-			    rte_ring_create (name, app.ring_tx_size, socket_io, RING_F_SP_ENQ | RING_F_SC_DEQ);
-			if (ring == NULL) {
-				rte_panic (
-				    "Cannot create ring to connect worker core %u with TX port "
-				    "%u\n",
-				    lcore, port);
-			}
-
-			lp_worker->rings_out[port]                  = ring;
-			lp_io->tx.rings[port][lp_worker->worker_id] = ring;
 		}
 	}
 }
@@ -441,9 +327,8 @@ static void app_init_nics (void) {
 }
 
 void app_init (void) {
-	app_assign_worker_ids ();
 	app_init_mbuf_pools ();
-	app_init_rings_rx ();
+	//app_init_rings_rx ();
 	app_init_rings_tx ();
 	app_init_nics ();
 
