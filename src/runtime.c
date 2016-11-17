@@ -679,20 +679,20 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]),
 			        icmppkt,
 			        icmppktlen > sndpktlen ? sndpktlen : icmppktlen);
-
-			if (k == 0) {
-				*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + idoffset)) =
-				    (TSIDTYPE)tspacketId;
-
-				if (autoIncNum) {
-					*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) +
-					               cntroffset)) = pktcounter++;
-				}
-			}
 		}
 
-		// TS the first pkt
-		*(hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset) = hptl_get ();
+		if (queue == 0) {
+			*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + idoffset)) =
+			    (TSIDTYPE)tspacketId;
+
+			if (autoIncNum) {
+				*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + cntroffset)) =
+				    pktcounter++;
+			}
+
+			*(hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset) =
+			    hptl_get ();
+		}
 
 		if (doChecksum) {
 			uint16_t cksum;
