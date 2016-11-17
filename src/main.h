@@ -374,8 +374,8 @@ struct pktLatencyStat {
 	hptl_t sentTime;
 	hptl_t recvTime;
 	struct timespec hwTime;
+	uint64_t totalBytes;
 	uint16_t pktLen;
-	uint16_t totalBytes;
 	uint8_t recved;
 } __rte_cache_aligned;
 
