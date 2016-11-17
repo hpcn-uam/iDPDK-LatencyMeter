@@ -47,6 +47,6 @@ make -j5 && \
         #   F = I/O TX lcore write burst size to NIC TX (default value is 144)   
 \
         build/app/hpcn_latency -c F -n 2 -- --rx "(0,0,1)" --tx "(1,0,3)" \
-                --rsz "1024, 2048, 1024, 1024" \
-                --bsz "(144, 144), (144, 144), (144, 144)" \
+                --rsz "1024, 1024" \
+                --bsz "144, 144" \
 		$@

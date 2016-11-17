@@ -48,6 +48,6 @@ make && \
         #   F = I/O TX lcore write burst size to NIC TX (default value is 144)   
 \
         sudo build/app/hpcn_latency -c F -n 2 -- --rx "(0,0,1)" --tx "(0,0,2)" \
-                --rsz "1024, 2048, 1024, 1024" \
-                --bsz "(144, 144), (144, 144), (144, 144)" \
+                --rsz "1024, 1024" \
+                --bsz "144, 144" \
 		--trainSleep 0 $@
