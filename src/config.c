@@ -341,7 +341,7 @@ static int parse_arg_bsz (const char *arg) {
 	}
 
 	if (str_to_unsigned_vals (arg,
-	                          APP_ARG_RSZ_CHARS,
+	                          APP_ARG_BSZ_CHARS,
 	                          ',',
 	                          2,
 	                          &app.burst_size_io_rx_read,
