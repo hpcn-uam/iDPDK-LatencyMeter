@@ -484,7 +484,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			uint8_t *data = (uint8_t *)rte_ctrlmbuf_data (lp->rx.mbuf_in.array[i]);
 			uint32_t len  = rte_ctrlmbuf_len (lp->rx.mbuf_in.array[i]);
 
-			lp->rx.nic_queues_iters[queue] += len;
+			lp->rx.nic_queues_count[queue] += len;
 
 			if (*(uint16_t *)(data + idoffset) == (TSIDTYPE)tspacketId) {  // paquete marcado
 				if (autoIncNum) {
@@ -499,10 +499,10 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 				latencyStats[counter].recvTime   = hptl_get ();
 				latencyStats[counter].sentTime   = (*(hptl_t *)(data + tsoffset));
 				latencyStats[counter].pktLen     = len;
-				latencyStats[counter].totalBytes = lp->rx.nic_queues_iters[queue];
+				latencyStats[counter].totalBytes = lp->rx.nic_queues_count[queue];
 				latencyStats[counter].recved     = 1;
 
-				lp->rx.nic_queues_iters[queue] = 0;  // reset counter
+				lp->rx.nic_queues_count[queue] = 0;  // reset counter
 
 				if (hwTimeTest) {
 					latencyStats[counter].hwTime.tv_sec  = *(uint32_t *)(data + 50);
