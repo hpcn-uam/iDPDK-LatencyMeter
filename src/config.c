@@ -131,10 +131,16 @@ static const char usage[] =
     "    --bw : Only measures bandwidth, but with higher resolution                 \n";
 
 void app_print_usage (void) {
-	printf (usage, APP_DEFAULT_NIC_RX_RING_SIZE, APP_DEFAULT_RING_RX_SIZE, APP_DEFAULT_RING_TX_SIZE,
-	        APP_DEFAULT_NIC_TX_RING_SIZE, APP_DEFAULT_BURST_SIZE_IO_RX_READ,
-	        APP_DEFAULT_BURST_SIZE_IO_RX_WRITE, APP_DEFAULT_BURST_SIZE_WORKER_READ,
-	        APP_DEFAULT_BURST_SIZE_WORKER_WRITE, APP_DEFAULT_BURST_SIZE_IO_TX_READ,
+	printf (usage,
+	        APP_DEFAULT_NIC_RX_RING_SIZE,
+	        APP_DEFAULT_RING_RX_SIZE,
+	        APP_DEFAULT_RING_TX_SIZE,
+	        APP_DEFAULT_NIC_TX_RING_SIZE,
+	        APP_DEFAULT_BURST_SIZE_IO_RX_READ,
+	        APP_DEFAULT_BURST_SIZE_IO_RX_WRITE,
+	        APP_DEFAULT_BURST_SIZE_WORKER_READ,
+	        APP_DEFAULT_BURST_SIZE_WORKER_WRITE,
+	        APP_DEFAULT_BURST_SIZE_IO_TX_READ,
 	        APP_DEFAULT_BURST_SIZE_IO_TX_WRITE);
 }
 
@@ -146,8 +152,8 @@ void app_print_usage (void) {
 #define APP_ARG_RX_MAX_TUPLES 128
 #endif
 
-static int str_to_unsigned_array (const char *s, size_t sbuflen, char separator, unsigned num_vals,
-                                  unsigned *vals) {
+static int str_to_unsigned_array (
+    const char *s, size_t sbuflen, char separator, unsigned num_vals, unsigned *vals) {
 	char str[sbuflen + 1];
 	char *splits[num_vals];
 	char *endptr      = NULL;
@@ -160,14 +166,15 @@ static int str_to_unsigned_array (const char *s, size_t sbuflen, char separator,
 	errno = 0;
 	for (i = 0; i < num_splits; i++) {
 		vals[i] = strtoul (splits[i], &endptr, 0);
-		if (errno != 0 || *endptr != '\0') return -1;
+		if (errno != 0 || *endptr != '\0')
+			return -1;
 	}
 
 	return num_splits;
 }
 
-static int str_to_unsigned_vals (const char *s, size_t sbuflen, char separator, unsigned num_vals,
-                                 ...) {
+static int str_to_unsigned_vals (
+    const char *s, size_t sbuflen, char separator, unsigned num_vals, ...) {
 	unsigned i, vals[num_vals];
 	va_list ap;
 
@@ -333,8 +340,14 @@ static int parse_arg_rsz (const char *arg) {
 		return -1;
 	}
 
-	if (str_to_unsigned_vals (arg, APP_ARG_RSZ_CHARS, ',', 4, &app.nic_rx_ring_size,
-	                          &app.ring_rx_size, &app.ring_tx_size, &app.nic_tx_ring_size) != 4)
+	if (str_to_unsigned_vals (arg,
+	                          APP_ARG_RSZ_CHARS,
+	                          ',',
+	                          4,
+	                          &app.nic_rx_ring_size,
+	                          &app.ring_rx_size,
+	                          &app.ring_tx_size,
+	                          &app.nic_tx_ring_size) != 4)
 		return -2;
 
 	if ((app.nic_rx_ring_size == 0) || (app.nic_tx_ring_size == 0) || (app.ring_rx_size == 0) ||
@@ -356,8 +369,9 @@ static int parse_arg_bsz (const char *arg) {
 	}
 
 	p0 = strchr (p++, ')');
-	if ((p0 == NULL) || (str_to_unsigned_vals (p, p0 - p, ',', 2, &app.burst_size_io_rx_read,
-	                                           &app.burst_size_io_rx_write) != 2)) {
+	if ((p0 == NULL) ||
+	    (str_to_unsigned_vals (
+	         p, p0 - p, ',', 2, &app.burst_size_io_rx_read, &app.burst_size_io_rx_write) != 2)) {
 		return -2;
 	}
 
@@ -367,8 +381,9 @@ static int parse_arg_bsz (const char *arg) {
 	}
 
 	p0 = strchr (p++, ')');
-	if ((p0 == NULL) || (str_to_unsigned_vals (p, p0 - p, ',', 2, &app.burst_size_worker_read,
-	                                           &app.burst_size_worker_write) != 2)) {
+	if ((p0 == NULL) ||
+	    (str_to_unsigned_vals (
+	         p, p0 - p, ',', 2, &app.burst_size_worker_read, &app.burst_size_worker_write) != 2)) {
 		return -4;
 	}
 
@@ -378,8 +393,9 @@ static int parse_arg_bsz (const char *arg) {
 	}
 
 	p0 = strchr (p++, ')');
-	if ((p0 == NULL) || (str_to_unsigned_vals (p, p0 - p, ',', 2, &app.burst_size_io_tx_read,
-	                                           &app.burst_size_io_tx_write) != 2)) {
+	if ((p0 == NULL) ||
+	    (str_to_unsigned_vals (
+	         p, p0 - p, ',', 2, &app.burst_size_io_tx_read, &app.burst_size_io_tx_write) != 2)) {
 		return -6;
 	}
 
@@ -413,7 +429,7 @@ extern int bandWidthMeasure;
 extern int hwTimeTest;
 extern uint64_t trainLen;
 extern uint64_t trainSleep;  // ns
-extern uint64_t waitTime;  // ns
+extern uint64_t waitTime;    // ns
 extern unsigned sndpktlen;
 
 extern struct pktLatencyStat *latencyStats;
@@ -425,8 +441,14 @@ extern struct pktLatencyStat *latencyStats;
 static int parse_arg_etho (const char *arg) {
 	uint8_t etho[6];
 
-	if (sscanf (arg, "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX", etho + 0, etho + 1, etho + 2, etho + 3,
-	            etho + 4, etho + 5) != sizeof (etho)) {
+	if (sscanf (arg,
+	            "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX",
+	            etho + 0,
+	            etho + 1,
+	            etho + 2,
+	            etho + 3,
+	            etho + 4,
+	            etho + 5) != sizeof (etho)) {
 		return -1;
 	}
 
@@ -438,8 +460,14 @@ static int parse_arg_etho (const char *arg) {
 static int parse_arg_ethd (const char *arg) {
 	uint8_t ethd[6];
 
-	if (sscanf (arg, "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX", ethd + 0, ethd + 1, ethd + 2, ethd + 3,
-	            ethd + 4, ethd + 5) != sizeof (ethd)) {
+	if (sscanf (arg,
+	            "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX",
+	            ethd + 0,
+	            ethd + 1,
+	            ethd + 2,
+	            ethd + 3,
+	            ethd + 4,
+	            ethd + 5) != sizeof (ethd)) {
 		return -1;
 	}
 
@@ -485,7 +513,8 @@ static int parse_arg_trainLen (const char *arg) {
 		return -1;
 	}
 
-	if (latencyStats) free (latencyStats);
+	if (latencyStats)
+		free (latencyStats);
 
 	latencyStats = rte_calloc ("latency_stats", trainLen, sizeof (struct pktLatencyStat), 0);
 
@@ -586,7 +615,8 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_etho (optarg);
 					if (ret) {
 						printf ("Incorrect value for --etho argument (%s, error code: %d)\n",
-						        optarg, ret);
+						        optarg,
+						        ret);
 						return -1;
 					}
 				}
@@ -594,14 +624,16 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_ethd (optarg);
 					if (ret) {
 						printf ("Incorrect value for --ethd argument (%s, error code: %d)\n",
-						        optarg, ret);
+						        optarg,
+						        ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "ipo")) {
 					ret = parse_arg_ipo (optarg);
 					if (ret) {
-						printf ("Incorrect value for --ipo argument (%s, error code: %d)\n", optarg,
+						printf ("Incorrect value for --ipo argument (%s, error code: %d)\n",
+						        optarg,
 						        ret);
 						return -1;
 					}
@@ -609,7 +641,8 @@ int app_parse_args (int argc, char **argv) {
 				if (!strcmp (lgopts[option_index].name, "ipd")) {
 					ret = parse_arg_ipd (optarg);
 					if (ret) {
-						printf ("Incorrect value for --ipd argument (%s, error code: %d)\n", optarg,
+						printf ("Incorrect value for --ipd argument (%s, error code: %d)\n",
+						        optarg,
 						        ret);
 						return -1;
 					}
@@ -618,7 +651,8 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_pktLen (optarg);
 					if (ret) {
 						printf ("Incorrect value for --pktLen argument (%s, error code: %d)\n",
-						        optarg, ret);
+						        optarg,
+						        ret);
 						return -1;
 					}
 				}
@@ -626,7 +660,8 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_trainLen (optarg);
 					if (ret) {
 						printf ("Incorrect value for --trainLen argument (%s, error code: %d)\n",
-						        optarg, ret);
+						        optarg,
+						        ret);
 						return -1;
 					}
 				}
@@ -634,7 +669,8 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_trainSleep (optarg);
 					if (ret) {
 						printf ("Incorrect value for --trainSleep argument (%s, error code: %d)\n",
-						        optarg, ret);
+						        optarg,
+						        ret);
 						return -1;
 					}
 				}
@@ -642,7 +678,8 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_waitTime (optarg);
 					if (ret) {
 						printf ("Incorrect value for --waitTime argument (%s, error code: %d)\n",
-						        optarg, ret);
+						        optarg,
+						        ret);
 						return -1;
 					}
 				}
@@ -691,7 +728,8 @@ int app_parse_args (int argc, char **argv) {
 		app.burst_size_worker_write = APP_DEFAULT_BURST_SIZE_WORKER_WRITE;
 	}
 
-	if (optind >= 0) argv[optind - 1] = prgname;
+	if (optind >= 0)
+		argv[optind - 1] = prgname;
 
 	// Latency app arguments
 	if (trainLen == 0) {  // activate bandwidth mode
@@ -869,7 +907,8 @@ void app_print_params (void) {
 
 		printf ("RX ports  ");
 		for (i = 0; i < lp->rx.n_nic_queues; i++) {
-			printf ("(%u, %u)  ", (unsigned)lp->rx.nic_queues[i].port,
+			printf ("(%u, %u)  ",
+			        (unsigned)lp->rx.nic_queues[i].port,
 			        (unsigned)lp->rx.nic_queues[i].queue);
 		}
 		printf (";\n");
@@ -906,7 +945,8 @@ void app_print_params (void) {
 
 		printf ("TX ports  ");
 		for (i = 0; i < lp->tx.n_nic_queues; i++) {
-			printf ("(%u, %u)  ", (unsigned)lp->tx.nic_queues[i].port,
+			printf ("(%u, %u)  ",
+			        (unsigned)lp->tx.nic_queues[i].port,
 			        (unsigned)lp->tx.nic_queues[i].queue);
 		}
 		printf (";\n");
@@ -914,14 +954,19 @@ void app_print_params (void) {
 
 	/* Rings */
 	printf ("Ring sizes: NIC RX = %u; Worker in = %u; Worker out = %u; NIC TX = %u;\n",
-	        (unsigned)app.nic_rx_ring_size, (unsigned)app.ring_rx_size, (unsigned)app.ring_tx_size,
+	        (unsigned)app.nic_rx_ring_size,
+	        (unsigned)app.ring_rx_size,
+	        (unsigned)app.ring_tx_size,
 	        (unsigned)app.nic_tx_ring_size);
 
 	/* Bursts */
 	printf (
 	    "Burst sizes: I/O RX (rd = %u, wr = %u); Worker (rd = %u, wr = %u); I/O TX (rd = %u, wr = "
 	    "%u)\n",
-	    (unsigned)app.burst_size_io_rx_read, (unsigned)app.burst_size_io_rx_write,
-	    (unsigned)app.burst_size_worker_read, (unsigned)app.burst_size_worker_write,
-	    (unsigned)app.burst_size_io_tx_read, (unsigned)app.burst_size_io_tx_write);
+	    (unsigned)app.burst_size_io_rx_read,
+	    (unsigned)app.burst_size_io_rx_write,
+	    (unsigned)app.burst_size_worker_read,
+	    (unsigned)app.burst_size_worker_write,
+	    (unsigned)app.burst_size_io_tx_read,
+	    (unsigned)app.burst_size_io_tx_write);
 }
