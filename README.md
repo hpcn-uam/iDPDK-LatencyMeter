@@ -44,6 +44,8 @@ In `script` folder, there are some example scripts:
 - `scripts/interface0.sh` starts measuring the latency in the interface number 0. Using it to send and receive packets.
 - `scripts/interface01.sh` starts measuring the latency in the interface number 0 and 1. Using interface 0 to send and interface 1 to receive packets.
 
+- Recomended execution: `./scripts/interface01.sh --trainLen 1000 --trainSleep 0 --pktLen 100 --ethd aa:aa:aa:aa:aa:aa --hw --sts`
+
 Also, those scripts accept the following extra (optional) parameters:
 
 ````
