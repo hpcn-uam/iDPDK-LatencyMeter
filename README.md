@@ -2,6 +2,7 @@
 =================
 
 This application allows to measure the network's Latency and Bandwith.
+*Current phase*: **Early development**
 
 Clonning
 =================
