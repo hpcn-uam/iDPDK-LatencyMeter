@@ -374,7 +374,6 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 	}
 }
 
-#define _STIMATED_LATENCY_PER_PKT_ ()
 static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
                                         uint32_t bsz_rd,
                                         uint32_t stsw) {
@@ -402,7 +401,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 				if (latencyStats[k].recved) {
 					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
 					uint64_t fixedLatency =
-					    currentLatency - (stsw - 1) * (latencyStats[k].pktLen + 24) / 10.;
+					    currentLatency - (stsw - 1) * (latencyStats[k].pktLen*8 + 24) / 10.;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					printf (" Stimated %lu ns", fixedLatency);
 					sumLatency += currentLatency;
