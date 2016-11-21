@@ -49,13 +49,19 @@ In `script` folder, there are some example scripts:
 Also, those scripts accept the following extra (optional) parameters:
 
 ````
-    --etho "aa:bb:cc:dd:ee:ff" : The ethernet origin MAC addr
-    --ethd "aa:bb:cc:dd:ee:ff" : The ethernet destination MAC addr
-    --ipo "11.22.33.44" : The ip origin addr
-    --ipd "11.22.33.44" : The ip destination addr
-    --trainLen "TRAIN LENGTH" : Enables and sets the packet train length
-    --trainTime "TRAIN TIMEOUT" : When to stop the measurment when all
-                                  packets has been sent
-    --chksum : Each packet recalculate the IP/ICMP checksum
-    --autoInc : Each packet autoincrements the ICMP's sequence number  
+    --etho "aa:bb:cc:dd:ee:ff" : The ethernet origin MAC addr                
+    --ethd "aa:bb:cc:dd:ee:ff" : The ethernet destination MAC addr           
+    --ipo "11.22.33.44" : The ip origin addr                                 
+    --ipd "11.22.33.44" : The ip destination addr                            
+    --pktLen "Packet LENGTH" : Sets the size of each sent packet             
+    --trainLen "TRAIN LENGTH" : Enables and sets the packet train length     
+    --trainSleep "TRAIN SLEEP": Sleep in NS between packets                  
+    --hw : Checks HW timestamp packet [For debug purposes]                     
+    --sts : Mode that sends lots of packets but only a few are timestamped     
+    --waitTime "WAIT TIMEOUT" : Nanoseconds to stop the measurment when all  
+                                    packets has been sent                      
+    --chksum : Each packet recalculate the IP/ICMP checksum                    
+    --autoInc : Each packet autoincrements the ICMP's sequence number          
+    --bw : Only measures bandwidth, but with higher resolution                 
+    --lo : The application works in loopback mode. Used to measure TTL
 ````
