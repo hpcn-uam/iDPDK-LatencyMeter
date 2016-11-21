@@ -114,7 +114,8 @@ static const char usage[] =
     "                                    packets has been sent                      \n"
     "    --chksum : Each packet recalculate the IP/ICMP checksum                    \n"
     "    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
-    "    --bw : Only measures bandwidth, but with higher resolution                 \n";
+    "    --bw : Only measures bandwidth, but with higher resolution                 \n"
+    "    --lo : The application works in loopback mode. Used to measure TTL         \n";
 
 void app_print_usage (void) {
 	printf (usage,

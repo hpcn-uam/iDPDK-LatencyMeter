@@ -374,7 +374,8 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 	}
 }
 
-static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t bsz_rd) {
+#define _STIMATED_LATENCY_PER_PKT_ () 
+static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t bsz_rd, uint32_t stsw) {
 	uint32_t i;
 
 	static uint32_t counter = 0;
@@ -398,7 +399,9 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			for (k = 0; k < trainLen; k++) {
 				if (latencyStats[k].recved) {
 					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
+					uint64_t fixedLatency = currentLatency - stsw * (latencyStats[k].pktLen+24)/10;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
+					printf ("Bulk-free-Latency-aprox %lu ns", fixedLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
