@@ -374,8 +374,10 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 	}
 }
 
-#define _STIMATED_LATENCY_PER_PKT_ () 
-static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t bsz_rd, uint32_t stsw) {
+#define _STIMATED_LATENCY_PER_PKT_ ()
+static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
+                                        uint32_t bsz_rd,
+                                        uint32_t stsw) {
 	uint32_t i;
 
 	static uint32_t counter = 0;
@@ -399,7 +401,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t
 			for (k = 0; k < trainLen; k++) {
 				if (latencyStats[k].recved) {
 					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
-					uint64_t fixedLatency = currentLatency - stsw * (latencyStats[k].pktLen+24)/10;
+					uint64_t fixedLatency =
+					    currentLatency - stsw * (latencyStats[k].pktLen + 24) / 10;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					printf ("Bulk-free-Latency-aprox %lu ns", fixedLatency);
 					sumLatency += currentLatency;
@@ -785,7 +788,7 @@ static void app_lcore_main_loop_io (void) {
 
 		for (;;) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
-				app_lcore_io_rx_sts (lp, bsz_rx_rd);
+				app_lcore_io_rx_sts (lp, bsz_rx_rd, app.burst_size_io_tx_write);
 			}
 
 			if (likely (lp->tx.n_nic_queues > 0)) {
