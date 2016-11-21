@@ -223,7 +223,7 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 					}
 					if (lastTime != 0) {
 						printf (" insta-BandWidth %lf Gbps",
-						        (latencyStats[k].pktLen / 1000000000.) /
+						        (latencyStats[k].pktLen * 8 / 1000000000.) /
 						            (((double)latencyStats[k].recvTime - lastTime) / 1000000000.));
 					} else {
 						if (hwTimeTest) {
@@ -402,9 +402,9 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 				if (latencyStats[k].recved) {
 					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
 					uint64_t fixedLatency =
-					    currentLatency - stsw * (latencyStats[k].pktLen + 24) / 10;
+					    currentLatency - (stsw - 1) * (latencyStats[k].pktLen + 24) / 10.;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
-					printf (" Real-stimated %lu ns", fixedLatency);
+					printf (" Stimated %lu ns", fixedLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
