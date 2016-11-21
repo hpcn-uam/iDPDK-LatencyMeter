@@ -404,7 +404,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 					uint64_t fixedLatency =
 					    currentLatency - stsw * (latencyStats[k].pktLen + 24) / 10;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
-					printf ("Bulk-free-Latency-aprox %lu ns", fixedLatency);
+					printf (" Real-stimated %lu ns", fixedLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
