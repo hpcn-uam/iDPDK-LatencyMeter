@@ -239,6 +239,7 @@ static void check_all_ports_link_status (uint8_t port_num, uint32_t port_mask) {
 }
 
 extern uint8_t icmppkt[];
+extern uint8_t arppkt[];
 
 static void app_init_nics (void) {
 	unsigned socket;
@@ -314,6 +315,7 @@ static void app_init_nics (void) {
 
 		// get current mac addr
 		rte_eth_macaddr_get (port, (struct ether_addr *)(icmppkt + 6));
+		rte_eth_macaddr_get (port, (struct ether_addr *)(arppkt + 6));
 		printf ("Default ETHOrig set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX", icmppkt[6], icmppkt[7],
 		        icmppkt[8], icmppkt[9], icmppkt[10], icmppkt[11]);
 
