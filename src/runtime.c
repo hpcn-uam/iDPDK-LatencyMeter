@@ -401,7 +401,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 				if (latencyStats[k].recved) {
 					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
 					uint64_t fixedLatency =
-					    currentLatency - (stsw - 1) * (latencyStats[k].pktLen*8 + 24) / 10.;
+					    currentLatency - (stsw - 1) * (latencyStats[k].pktLen * 8 + 24) / 10.;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					printf (" Stimated %lu ns", fixedLatency);
 					sumLatency += currentLatency;
@@ -693,6 +693,12 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 			if (autoIncNum) {
 				*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + cntroffset)) =
 				    pktcounter++;
+				if (pktcounter == trainLen) {
+					hptl_waitns (waitTime);
+					continueRX = 0;
+					hptl_waitns (waitTime);
+					exit (1);
+				}
 			}
 
 			*(hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset) =
