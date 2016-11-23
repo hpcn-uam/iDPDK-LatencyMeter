@@ -403,7 +403,7 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 					uint64_t fixedLatency =
 					    currentLatency - (stsw - 1) * (latencyStats[k].pktLen * 8 + 24) / 10.;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
-					printf (" Stimated %lu ns", fixedLatency);
+					printf (" Estimated %lu ns", fixedLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
