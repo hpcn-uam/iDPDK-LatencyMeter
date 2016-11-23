@@ -135,10 +135,17 @@ static void app_init_mbuf_pools (void) {
 
 		snprintf (name, sizeof (name), "mbuf_pool_%u", socket);
 		printf ("Creating the mbuf pool for socket %u ...\n", socket);
-		app.pools[socket] = rte_mempool_create (
-		    name, APP_DEFAULT_MEMPOOL_BUFFERS, APP_DEFAULT_MBUF_SIZE,
-		    APP_DEFAULT_MEMPOOL_CACHE_SIZE, sizeof (struct rte_pktmbuf_pool_private),
-		    rte_pktmbuf_pool_init, NULL, rte_pktmbuf_init, NULL, socket, 0);
+		app.pools[socket] = rte_mempool_create (name,
+		                                        APP_DEFAULT_MEMPOOL_BUFFERS,
+		                                        APP_DEFAULT_MBUF_SIZE,
+		                                        APP_DEFAULT_MEMPOOL_CACHE_SIZE,
+		                                        sizeof (struct rte_pktmbuf_pool_private),
+		                                        rte_pktmbuf_pool_init,
+		                                        NULL,
+		                                        rte_pktmbuf_init,
+		                                        NULL,
+		                                        socket,
+		                                        0);
 		if (app.pools[socket] == NULL) {
 			rte_panic ("Cannot create mbuf pool on socket %u\n", socket);
 		}
@@ -196,10 +203,12 @@ static void check_all_ports_link_status (uint8_t port_num, uint32_t port_mask) {
 	for (count = 0; count <= MAX_CHECK_TIME; count++) {
 		all_ports_up = 1;
 		for (portid = 0; portid < port_num; portid++) {
-			if ((port_mask & (1 << portid)) == 0) continue;
+			if ((port_mask & (1 << portid)) == 0)
+				continue;
 			n_rx_queues = app_get_nic_rx_queues_per_port (portid);
 			n_tx_queues = app_get_nic_tx_queues_per_port (portid);
-			if ((n_rx_queues == 0) && (n_tx_queues == 0)) continue;
+			if ((n_rx_queues == 0) && (n_tx_queues == 0))
+				continue;
 			memset (&link, 0, sizeof (link));
 			rte_eth_link_get_nowait (portid, &link);
 			/* print link status if flag set */
@@ -208,7 +217,8 @@ static void check_all_ports_link_status (uint8_t port_num, uint32_t port_mask) {
 					printf (
 					    "Port %d Link Up - speed %u "
 					    "Mbps - %s\n",
-					    (uint8_t)portid, (unsigned)link.link_speed,
+					    (uint8_t)portid,
+					    (unsigned)link.link_speed,
 					    (link.link_duplex == ETH_LINK_FULL_DUPLEX) ? ("full-duplex")
 					                                               : ("half-duplex\n"));
 				else
@@ -222,7 +232,8 @@ static void check_all_ports_link_status (uint8_t port_num, uint32_t port_mask) {
 			}
 		}
 		/* after finally printing all link status, get out */
-		if (print_flag == 1) break;
+		if (print_flag == 1)
+			break;
 
 		if (all_ports_up == 0) {
 			printf (".");
@@ -281,11 +292,13 @@ static void app_init_nics (void) {
 			pool   = app.lcore_params[lcore].pool;
 
 			printf ("Initializing NIC port %u RX queue %u ...\n", (unsigned)port, (unsigned)queue);
-			ret = rte_eth_rx_queue_setup (port, queue, (uint16_t)app.nic_rx_ring_size, socket,
-			                              &rx_conf, pool);
+			ret = rte_eth_rx_queue_setup (
+			    port, queue, (uint16_t)app.nic_rx_ring_size, socket, &rx_conf, pool);
 			if (ret < 0) {
-				rte_panic ("Cannot init RX queue %u for port %u (%d)\n", (unsigned)queue,
-				           (unsigned)port, ret);
+				rte_panic ("Cannot init RX queue %u for port %u (%d)\n",
+				           (unsigned)queue,
+				           (unsigned)port,
+				           ret);
 			}
 		}
 
@@ -299,11 +312,13 @@ static void app_init_nics (void) {
 			socket = rte_lcore_to_socket_id (lcore);
 
 			printf ("Initializing NIC port %u TX queue %u ...\n", (unsigned)port, (unsigned)queue);
-			ret = rte_eth_tx_queue_setup (port, queue, (uint16_t)app.nic_tx_ring_size, socket,
-			                              &tx_conf);
+			ret = rte_eth_tx_queue_setup (
+			    port, queue, (uint16_t)app.nic_tx_ring_size, socket, &tx_conf);
 			if (ret < 0) {
-				rte_panic ("Cannot init TX queue %u for port %u (%d)\n", (unsigned)queue,
-				           (unsigned)port, ret);
+				rte_panic ("Cannot init TX queue %u for port %u (%d)\n",
+				           (unsigned)queue,
+				           (unsigned)port,
+				           ret);
 			}
 		}
 
@@ -316,8 +331,13 @@ static void app_init_nics (void) {
 		// get current mac addr
 		rte_eth_macaddr_get (port, (struct ether_addr *)(icmppkt + 6));
 		rte_eth_macaddr_get (port, (struct ether_addr *)(arppkt + 6));
-		printf ("Default ETHOrig set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX", icmppkt[6], icmppkt[7],
-		        icmppkt[8], icmppkt[9], icmppkt[10], icmppkt[11]);
+		printf ("Default ETHOrig set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX",
+		        icmppkt[6],
+		        icmppkt[7],
+		        icmppkt[8],
+		        icmppkt[9],
+		        icmppkt[10],
+		        icmppkt[11]);
 
 		// set IP Checksum
 		struct ipv4_hdr *hdr = (struct ipv4_hdr *)(icmppkt + 6 + 6 + 2);
@@ -330,7 +350,7 @@ static void app_init_nics (void) {
 
 void app_init (void) {
 	app_init_mbuf_pools ();
-	//app_init_rings_rx ();
+	// app_init_rings_rx ();
 	app_init_rings_tx ();
 	app_init_nics ();
 
