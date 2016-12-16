@@ -115,7 +115,11 @@ static const char usage[] =
     "    --chksum : Each packet recalculate the IP/ICMP checksum                    \n"
     "    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
     "    --bw : Only measures bandwidth, but with higher resolution                 \n"
-    "    --lo : The application works in loopback mode. Used to measure TTL         \n";
+    "    --lo : The application works in loopback mode. Used to measure TTL         \n"
+
+    "                                                                               \n"
+    "Misc Parameters                                                                \n"
+    "    --outputFile \"outputFile\" : A file to redirect output data               \n";
 
 void app_print_usage (void) {
 	printf (usage,
@@ -481,6 +485,11 @@ static int parse_arg_waitTime (const char *arg) {
 	return 0;
 }
 
+static int parse_arg_outputFile (const char *arg) {
+	FILE *f = freopen (arg, "w+", stdout);
+	return !f;
+}
+
 /* Parse the argument given in the command line of the application */
 int app_parse_args (int argc, char **argv) {
 	int opt, ret;
@@ -510,6 +519,8 @@ int app_parse_args (int argc, char **argv) {
 	                                 {"sts", 0, 0, 0},
 	                                 // debug
 	                                 {"hw", 0, 0, 0},
+	                                 // Misc functions
+	                                 {"outputFile", 1, 0, 0},
 	                                 // endlist
 	                                 {NULL, 0, 0, 0}};
 	uint32_t arg_rx  = 0;
@@ -622,6 +633,15 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_waitTime (optarg);
 					if (ret) {
 						printf ("Incorrect value for --waitTime argument (%s, error code: %d)\n",
+						        optarg,
+						        ret);
+						return -1;
+					}
+				}
+				if (!strcmp (lgopts[option_index].name, "outputFile")) {
+					ret = parse_arg_outputFile (optarg);
+					if (ret) {
+						printf ("Incorrect value for --outputFile argument (%s, error code: %d)\n",
 						        optarg,
 						        ret);
 						return -1;
