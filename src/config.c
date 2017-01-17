@@ -486,7 +486,7 @@ static int parse_arg_waitTime (const char *arg) {
 }
 
 static int parse_arg_outputFile (const char *arg) {
-	output = fopen (arg, "w+");
+	output = fopen (arg, "w");
 	return !output;
 }
 

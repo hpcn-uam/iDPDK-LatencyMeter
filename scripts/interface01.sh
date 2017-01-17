@@ -2,7 +2,6 @@
 
 #Current directory
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 #DPDK Directory
 export RTE_SDK=$DIR/../dpdk
 
@@ -15,7 +14,7 @@ fi
 cd $DIR/..
 git submodule update --init
 cd src
-make -j5 && \
+make -j5 && cd .. \
 \
         # c = numero de procesadores
         # n = numero de canales de memoria
@@ -46,7 +45,7 @@ make -j5 && \
         #       is 144)
         #   F = I/O TX lcore write burst size to NIC TX (default value is 144)   
 \
-        build/app/hpcn_latency -c F -n 2 -- --rx "(0,0,1)" --tx "(1,0,3)" \
+        src/build/app/hpcn_latency -c F -n 2 -- --rx "(0,0,1)" --tx "(1,0,3)" \
                 --rsz "1024, 1024" \
                 --bsz "144, 144" \
 		$@
