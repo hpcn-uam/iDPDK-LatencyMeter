@@ -76,7 +76,7 @@
 #include "main.h"
 
 struct app_params app;
-
+FILE* output;
 static const char usage[] =
     "                                                                               \n"
     "    hpcn_latency <EAL PARAMS> -- <APP PARAMS>                                  \n"
@@ -486,7 +486,8 @@ static int parse_arg_waitTime (const char *arg) {
 }
 
 static int parse_arg_outputFile (const char *arg) {
-	FILE *f = freopen (arg, "w+", stdout);
+	output = fopen (arg, "w+");
+
 	return !f;
 }
 

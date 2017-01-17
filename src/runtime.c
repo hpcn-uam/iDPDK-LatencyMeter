@@ -127,6 +127,7 @@
 
 #define icmpStart (6 + 6 + 2 + 5 * 4)
 
+extern FILE* output;
 uint8_t arppkt[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x84, 0x2b, 0x2b, 0x6b, 0x4d, 0x61,
                     0x08, 0x06, 0x00, 0x01, 0x08, 0x00, 0x06, 0x04, 0x00, 0x02, 0x84, 0x2b,
                     0x2b, 0x6b, 0x4d, 0x61, 0xc0, 0xa8, 0x00, 0x78, 0x00, 0x00, 0x00, 0x00,
@@ -202,6 +203,11 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 				if (latencyStats[k].recved) {
 					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
+
+					if(output) {
+						fprintf(output, "%lu\n", currentLatency);
+					}
+
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
