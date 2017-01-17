@@ -76,7 +76,6 @@
 #include "main.h"
 
 struct app_params app;
-FILE* output;
 static const char usage[] =
     "                                                                               \n"
     "    hpcn_latency <EAL PARAMS> -- <APP PARAMS>                                  \n"
@@ -379,6 +378,7 @@ extern uint64_t trainLen;
 extern uint64_t trainSleep;  // ns
 extern uint64_t waitTime;    // ns
 extern unsigned sndpktlen;
+extern FILE* output;
 
 extern struct pktLatencyStat *latencyStats;
 
