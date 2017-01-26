@@ -518,6 +518,7 @@ int app_parse_args (int argc, char **argv) {
 	                                 {"autoInc", 0, 0, 0},
 	                                 // Measurment kind
 	                                 {"bw", 0, 0, 0},
+	                                 {"bwp", 0, 0, 0},
 	                                 {"sts", 0, 0, 0},
 	                                 // debug
 	                                 {"hw", 0, 0, 0},
