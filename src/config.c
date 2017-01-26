@@ -115,6 +115,7 @@ static const char usage[] =
     "    --chksum : Each packet recalculate the IP/ICMP checksum                    \n"
     "    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
     "    --bw : Only measures bandwidth, but with higher resolution                 \n"
+    "    --bwp: Only measures bandwidth(pasive) by just listening. No packet is sent\n"
     "    --lo : The application works in loopback mode. Used to measure TTL         \n"
 
     "                                                                               \n"
@@ -374,6 +375,7 @@ extern int doChecksum;
 extern int autoIncNum;
 extern int selectiveTS;
 extern int bandWidthMeasure;
+extern int bandWidthMeasureActive;
 extern int hwTimeTest;
 extern uint64_t trainLen;
 extern uint64_t trainSleep;  // ns
@@ -654,6 +656,10 @@ int app_parse_args (int argc, char **argv) {
 					autoIncNum = 1;
 				}
 				if (!strcmp (lgopts[option_index].name, "bw")) {
+					bandWidthMeasure       = 1;
+					bandWidthMeasureActive = 1;
+				}
+				if (!strcmp (lgopts[option_index].name, "bwp")) {
 					bandWidthMeasure = 1;
 				}
 				if (!strcmp (lgopts[option_index].name, "hw")) {

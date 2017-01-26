@@ -63,6 +63,7 @@ Also, those scripts accept the following extra (optional) parameters:
                                     packets has been sent                      
     --chksum : Each packet recalculate the IP/ICMP checksum                    
     --autoInc : Each packet autoincrements the ICMP's sequence number          
-    --bw : Only measures bandwidth, but with higher resolution                 
+    --bw : Only measures bandwidth, but with higher resolution               
+    --bwp: Only measures bandwidth(pasive) by just listening. No packet is sent                 
     --lo : The application works in loopback mode. Used to measure TTL
 ````

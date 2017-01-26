@@ -162,14 +162,15 @@ const float fpgaConvRate = 4.294967296;
 static unsigned pktcounter  = 0;
 static unsigned bytecounter = 0;
 
-int doChecksum       = 0;
-int autoIncNum       = 0;
-int selectiveTS      = 0;  // Selective Timestamping
-int hwTimeTest       = 0;
-int bandWidthMeasure = 0;
-uint64_t trainLen    = 0;
-uint64_t trainSleep  = 0;                          // ns
-uint64_t waitTime    = 10 * 1000 * 1000 * 1000UL;  // ns
+int doChecksum             = 0;
+int autoIncNum             = 0;
+int selectiveTS            = 0;  // Selective Timestamping
+int hwTimeTest             = 0;
+int bandWidthMeasure       = 0;
+int bandWidthMeasureActive = 0;
+uint64_t trainLen          = 0;
+uint64_t trainSleep        = 0;                          // ns
+uint64_t waitTime          = 10 * 1000 * 1000 * 1000UL;  // ns
 
 int continueRX = 1;
 
@@ -775,7 +776,7 @@ static void app_lcore_main_loop_io (void) {
 
 	app_lcore_arp_tx_gratuitous (lp);
 
-	if (bandWidthMeasure) {  // only measure bw
+	if (bandWidthMeasureActive) {  // only measure bw
 		for (;;) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
 				app_lcore_io_rx_bw (lp, bsz_rx_rd);
@@ -783,6 +784,14 @@ static void app_lcore_main_loop_io (void) {
 
 			if (likely (lp->tx.n_nic_queues > 0)) {
 				app_lcore_io_tx_bw (lp, app.burst_size_io_tx_write);
+			}
+
+			i++;
+		}
+	} else if (bandWidthMeasure) {  // only measure bw
+		for (;;) {
+			if (likely (lp->rx.n_nic_queues > 0)) {
+				app_lcore_io_rx_bw (lp, bsz_rx_rd);
 			}
 
 			i++;
