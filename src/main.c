@@ -80,7 +80,8 @@ int MAIN (int argc, char **argv) {
 
 	/* Init EAL */
 	ret = rte_eal_init (argc, argv);
-	if (ret < 0) return -1;
+	if (ret < 0)
+		return -1;
 	argc -= ret;
 	argv += ret;
 
@@ -97,6 +98,11 @@ int MAIN (int argc, char **argv) {
 
 	/* Launch per-lcore init on every lcore */
 	rte_eal_mp_remote_launch (app_lcore_main_loop, NULL, CALL_MASTER);
+
+	/* Run autoconfig */
+	app_autoconf ();
+
+	/* Wait for threads*/
 	RTE_LCORE_FOREACH_SLAVE (lcore) {
 		if (rte_eal_wait_lcore (lcore) < 0) {
 			return -1;
