@@ -358,5 +358,7 @@ void app_init (void) {
 	hptl_config conf = {.clockspeed = 0, .precision = 9};
 	hptl_init (&conf);
 
+	printf ("Using HPTL %s.\n",hptl_VERSION);
+
 	printf ("Initialization completed.\n");
 }
