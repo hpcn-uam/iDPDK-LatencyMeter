@@ -73,6 +73,7 @@
 #include <rte_lpm.h>
 
 #include "main.h"
+#include "autoconf.h"
 
 int MAIN (int argc, char **argv) {
 	uint32_t lcore;

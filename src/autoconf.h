@@ -9,8 +9,11 @@
 
   Description: The autoconfigure tool for latency-calibration purposes
 */
-#ifndef __LATENCY_AUTOCONF__H__
-#define __LATENCY_AUTOCONF__H__
+#ifndef __LATENCY__AUTOCONF__H__
+#define __LATENCY__AUTOCONF__H__
+
+#include <rte_memory.h>
+
 #include "main.h"
 
 void app_autoconf (void);

@@ -36,7 +36,6 @@
 
 #include <stdio.h>
 #include "hptl.h"
-#include "autoconf.h"
 
 /* Logical cores */
 #ifndef APP_MAX_SOCKETS
