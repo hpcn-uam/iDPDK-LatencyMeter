@@ -172,6 +172,9 @@ uint64_t trainLen          = 0;
 uint64_t trainSleep        = 0;                          // ns
 uint64_t waitTime          = 10 * 1000 * 1000 * 1000UL;  // ns
 
+// Autoconfigure
+int doloop = 1;
+
 int continueRX = 1;
 
 struct pktLatencyStat *latencyStats = NULL;
@@ -777,7 +780,7 @@ static void app_lcore_main_loop_io (void) {
 	app_lcore_arp_tx_gratuitous (lp);
 
 	if (bandWidthMeasureActive) {  // only measure bw
-		for (;;) {
+		while (likely (doloop)) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
 				app_lcore_io_rx_bw (lp, bsz_rx_rd);
 			}
@@ -789,7 +792,7 @@ static void app_lcore_main_loop_io (void) {
 			i++;
 		}
 	} else if (bandWidthMeasure) {  // only measure bw
-		for (;;) {
+		while (likely (doloop)) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
 				app_lcore_io_rx_bw (lp, bsz_rx_rd);
 			}
@@ -800,7 +803,7 @@ static void app_lcore_main_loop_io (void) {
 		// Send a pkt-burst to fill output queues
 		app_lcore_io_tx_bw (lp, app.nic_tx_ring_size - 1);
 
-		for (;;) {
+		while (likely (doloop)) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
 				app_lcore_io_rx_sts (lp, bsz_rx_rd, app.burst_size_io_tx_write);
 			}
@@ -812,7 +815,7 @@ static void app_lcore_main_loop_io (void) {
 			i++;
 		}
 	} else {  // measure bw & latency, priorizing latency
-		for (;;) {
+		while (likely (doloop)) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
 				app_lcore_io_rx (lp, bsz_rx_rd);
 			}
@@ -835,7 +838,9 @@ int app_lcore_main_loop (__attribute__ ((unused)) void *arg) {
 
 	if (lp->type == e_APP_LCORE_IO) {
 		printf ("Logical core %u (I/O) main loop.\n", lcore);
-		app_lcore_main_loop_io ();
+		for (;;) {
+			app_lcore_main_loop_io ();
+		}
 	}
 
 	return 0;
