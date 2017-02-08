@@ -116,7 +116,7 @@ static const char usage[] =
     "    --autoInc : Each packet autoincrements the ICMP's sequence number          \n"
     "    --bw : Only measures bandwidth, but with higher resolution                 \n"
     "    --bwp: Only measures bandwidth(pasive) by just listening. No packet is sent\n"
-    "    --lo : The application works in loopback mode. Used to measure TTL         \n"
+    "    --lo : The application works in loopback mode. Used to measure RTT         \n"
 
     "                                                                               \n"
     "Misc Parameters                                                                \n"

@@ -36,16 +36,21 @@ cd ..
 APP-Compilation
 =================
 The application is compiled automatically when executing one of the provided scripts.
-If you prefere to compile it manually, in the `src` folder there is a `Makefile` to do so.
+If you prefere to compile it manually, in the `src` folder there is a `Makefile` to do it.
 
 Execution
 =================
 In `script` folder, there are some example scripts:
 
 - `scripts/interface0.sh` starts measuring the latency in the interface number 0. Using it to send and receive packets.
+- `scripts/interface0.40g.sh` It is a similar script than the adove. This script uses 2 tx queues to saturate efficiently a 40G Ethernet link.
 - `scripts/interface01.sh` starts measuring the latency in the interface number 0 and 1. Using interface 0 to send and interface 1 to receive packets.
 
-- Recomended execution: `./scripts/interface01.sh --trainLen 1000 --trainSleep 0 --pktLen 100 --ethd aa:aa:aa:aa:aa:aa --hw --sts`
+The typical test, can be sumarized with the following execution parameters:
+
+- Measure latency and bandwidth using packet trains: `./scripts/interface01.sh --trainLen 1000 --pktLen 60 --sts`
+- Measure only bandwidth (it will saturate the link non-stop): `./scripts/interface01.sh --bw --pktLen 60`
+- Measure only latency (a sleep should be produced between packets): `./scripts/interface01.sh --trainLen 1000 --pktLen 1500 --trainSleep 2000`
 
 Also, those scripts accept the following extra (optional) parameters:
 
@@ -57,13 +62,12 @@ Also, those scripts accept the following extra (optional) parameters:
     --pktLen "Packet LENGTH" : Sets the size of each sent packet             
     --trainLen "TRAIN LENGTH" : Enables and sets the packet train length     
     --trainSleep "TRAIN SLEEP": Sleep in NS between packets                  
-    --hw : Checks HW timestamp packet [For debug purposes]                     
     --sts : Mode that sends lots of packets but only a few are timestamped     
     --waitTime "WAIT TIMEOUT" : Nanoseconds to stop the measurment when all  
                                     packets has been sent                      
     --chksum : Each packet recalculate the IP/ICMP checksum                    
     --autoInc : Each packet autoincrements the ICMP's sequence number          
-    --bw : Only measures bandwidth, but with higher resolution               
-    --bwp: Only measures bandwidth(pasive) by just listening. No packet is sent                 
-    --lo : The application works in loopback mode. Used to measure TTL
+    --bw : Only measures bandwidth, but with higher resolution                 
+    --bwp: Only measures bandwidth(pasive) by just listening. No packet is sent
+    --lo : The application works in loopback mode. Used to measure RTT        
 ````
