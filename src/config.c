@@ -119,6 +119,13 @@ static const char usage[] =
     "    --lo : The application works in loopback mode. Used to measure RTT         \n"
 
     "                                                                               \n"
+    "Calibration Parameters                                                         \n"
+    "    --calibrate \"outputFile\" : Generate a calibration file. May take minutes"
+    " [IN DEV]\n"
+    "    --calibration \"inputFile\" : Open a calibration file, to fix measurements"
+    " [UNIMPLEMENTED]\n"
+    "                                                                               \n"
+
     "Misc Parameters                                                                \n"
     "    --outputFile \"outputFile\" : A file to redirect output data               \n";
 
@@ -384,6 +391,11 @@ extern unsigned sndpktlen;
 
 extern struct pktLatencyStat *latencyStats;
 
+// calibration and autoconf
+extern int autoCalibrate;
+extern int fixMeasurements;
+extern FILE *calibfd;
+
 #ifndef APP_ARG_ETH_SIZE_CHARS
 #define APP_ARG_ETH_SIZE_CHARS (2 * 6 + 1 * 5)
 #endif
@@ -492,6 +504,20 @@ static int parse_arg_outputFile (const char *arg) {
 	return !f;
 }
 
+static int parse_arg_calibrate (const char *arg) {
+	autoCalibrate = 1;
+
+	FILE *calibfd = fopen ("w+", arg);
+	return !calibfd;
+}
+
+static int parse_arg_calibration (const char *arg) {
+	fixMeasurements = 1;
+
+	FILE *calibfd = fopen ("r", arg);
+	return !calibfd;
+}
+
 /* Parse the argument given in the command line of the application */
 int app_parse_args (int argc, char **argv) {
 	int opt, ret;
@@ -522,6 +548,9 @@ int app_parse_args (int argc, char **argv) {
 	                                 {"sts", 0, 0, 0},
 	                                 // debug
 	                                 {"hw", 0, 0, 0},
+	                                 // calibrarion
+	                                 {"calibrate", 1, 0, 0},
+	                                 {"calibration", 1, 0, 0},
 	                                 // Misc functions
 	                                 {"outputFile", 1, 0, 0},
 	                                 // endlist
@@ -636,6 +665,24 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_waitTime (optarg);
 					if (ret) {
 						printf ("Incorrect value for --waitTime argument (%s, error code: %d)\n",
+						        optarg,
+						        ret);
+						return -1;
+					}
+				}
+				if (!strcmp (lgopts[option_index].name, "calibrate")) {
+					ret = parse_arg_calibrate (optarg);
+					if (ret) {
+						printf ("Incorrect value for --calibrate argument (%s, error code: %d)\n",
+						        optarg,
+						        ret);
+						return -1;
+					}
+				}
+				if (!strcmp (lgopts[option_index].name, "calibration")) {
+					ret = parse_arg_calibration (optarg);
+					if (ret) {
+						printf ("Incorrect value for --calibration argument (%s, error code: %d)\n",
 						        optarg,
 						        ret);
 						return -1;

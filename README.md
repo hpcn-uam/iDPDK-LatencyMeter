@@ -71,3 +71,14 @@ Also, those scripts accept the following extra (optional) parameters:
     --bwp: Only measures bandwidth(pasive) by just listening. No packet is sent
     --lo : The application works in loopback mode. Used to measure RTT        
 ````
+
+
+Calibration
+=================
+We are developing a auto-config/calibration to the system.
+In order to test the calibration, you can try the following parameters:
+
+````
+    --calibrate \"outputFile\" : Generate a calibration file. May take hours       
+    --calibration \"inputFile\" : Open a calibration file, to fix measurements
+````

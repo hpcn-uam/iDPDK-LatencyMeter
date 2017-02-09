@@ -16,6 +16,7 @@
 
 #include "main.h"
 
+void app_autoconf_init (void);
 void app_autoconf (void);
 
 #endif

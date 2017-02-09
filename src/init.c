@@ -73,6 +73,7 @@
 #include <rte_lpm.h>
 
 #include "main.h"
+#include "autoconf.h"
 
 static struct rte_eth_conf port_conf = {
     .rxmode =
@@ -358,7 +359,10 @@ void app_init (void) {
 	hptl_config conf = {.clockspeed = 0, .precision = 9};
 	hptl_init (&conf);
 
-	printf ("Using HPTL %s.\n",hptl_VERSION);
+	printf ("Using HPTL %s.\n", hptl_VERSION);
+
+	// AutoConf
+	app_autoconf_init ();
 
 	printf ("Initialization completed.\n");
 }
