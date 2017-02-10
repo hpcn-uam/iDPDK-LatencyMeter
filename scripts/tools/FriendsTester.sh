@@ -9,7 +9,7 @@ TRAINSLEEPS="$(seq 0 10 2000)"
 TRAINFRIENDS="$(seq 0 70)"
 
 for trainfriends in $TRAINFRIENDS ; do
-    RESULTBASE=$DIR/results/friendly/$trainfriends/
+    export RESULTBASE=$DIR/results/friendly/$trainfriends/
     for trainsleep in $TRAINSLEEPS ; do
         for trainlen in $TRAINLENS ; do
             rm -f results.$trainsleep.$trainlen.txt
