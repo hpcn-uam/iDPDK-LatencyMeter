@@ -9,13 +9,13 @@ TRAINSLEEPS="$(seq 0 10 2000)"
 TRAINFRIENDS="$(seq 0 70)"
 
 for trainfriends in $TRAINFRIENDS ; do
-    export RESULTBASE=$DIR/results/friendly/$trainfriends/
+    export RESULTBASE="$DIR/results/friendly/$trainfriends/"
     for trainsleep in $TRAINSLEEPS ; do
         for trainlen in $TRAINLENS ; do
-            rm -f results.$trainsleep.$trainlen.txt
+            rm -f $RESULTBASE/results.$trainsleep.$trainlen.txt
             for pktsize in $PKTSIZES ; do
                 echo "Test $trainsleep $trainlen $pktsize"
-                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends 70 | tee -a $RESULTBASE/results.$trainsleep.$trainlen.txt
+                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends $trainfriends | tee -a $RESULTBASE/results.$trainsleep.$trainlen.txt
             done
         done
     done

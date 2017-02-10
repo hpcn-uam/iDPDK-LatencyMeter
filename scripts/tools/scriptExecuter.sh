@@ -10,7 +10,7 @@ if [ -z "$RESULTBASE" ]; then
     RESULTBASE="$DIR/results/"
 fi
 
-FNAME=$RESULTBASE/$@.txt"
+FNAME="$RESULTBASE/$@.txt"
 mkdir -p "$RESULTBASE"
 
 #awk Script parse
