@@ -107,6 +107,10 @@ static const char usage[] =
     "    --ipd \"11.22.33.44\" : The ip destination addr                            \n"
     "    --pktLen \"Packet LENGTH\" : Sets the size of each sent packet             \n"
     "    --trainLen \"TRAIN LENGTH\" : Enables and sets the packet train length     \n"
+    "    --trainFriends \"TRAIN FRIENDS\" : if you are performing a simple latency    "
+    " measuremets tests with trainSleep activated, you can add friend packets to the  "
+    " train. This means: for each timestamped packet, a #friend dummy packets would   "
+    " be sent too                                                                   \n"
     "    --trainSleep \"TRAIN SLEEP\": Sleep in NS between packets                  \n"
     "    --hw : Checks HW timestamp packet [For debug purposes]                     \n"
     "    --sts : Mode that sends lots of packets but only a few are timestamped     \n"
@@ -386,6 +390,7 @@ extern int bandWidthMeasureActive;
 extern int hwTimeTest;
 extern uint64_t trainLen;
 extern uint64_t trainSleep;  // ns
+extern uint64_t trainFriends;
 extern uint64_t waitTime;    // ns
 extern unsigned sndpktlen;
 
@@ -491,6 +496,15 @@ static int parse_arg_trainSleep (const char *arg) {
 	return 0;
 }
 
+static int parse_arg_trainFriends (const char *arg) {
+	if (sscanf (arg, "%lu", &trainFriends) != 1) {
+		return -1;
+	}
+
+	return 0;
+}
+
+
 static int parse_arg_waitTime (const char *arg) {
 	if (sscanf (arg, "%lu", &waitTime) != 1) {
 		return -1;
@@ -538,6 +552,7 @@ int app_parse_args (int argc, char **argv) {
 	                                 // Trains, if not set, permanent connection would be done
 	                                 {"trainLen", 1, 0, 0},
 	                                 {"trainSleep", 1, 0, 0},
+	                                 {"trainFriends", 1, 0, 0},
 	                                 {"waitTime", 1, 0, 0},
 	                                 // Auto fix ICMP packets
 	                                 {"chksum", 0, 0, 0},
@@ -656,6 +671,15 @@ int app_parse_args (int argc, char **argv) {
 					ret = parse_arg_trainSleep (optarg);
 					if (ret) {
 						printf ("Incorrect value for --trainSleep argument (%s, error code: %d)\n",
+						        optarg,
+						        ret);
+						return -1;
+					}
+				}
+				if (!strcmp (lgopts[option_index].name, "trainFriends")) {
+					ret = parse_arg_trainFriends (optarg);
+					if (ret) {
+						printf ("Incorrect value for --trainFriends argument (%s, error code: %d)\n",
 						        optarg,
 						        ret);
 						return -1;

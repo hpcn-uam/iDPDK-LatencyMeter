@@ -169,7 +169,8 @@ int hwTimeTest             = 0;
 int bandWidthMeasure       = 0;
 int bandWidthMeasureActive = 0;
 uint64_t trainLen          = 0;
-uint64_t trainSleep        = 0;                          // ns
+uint64_t trainSleep        = 0;  // ns
+uint64_t trainFriends      = 0;
 uint64_t waitTime          = 10 * 1000 * 1000 * 1000UL;  // ns
 
 // Autoconfigure
@@ -245,8 +246,9 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 					ignored++;
 				}
 			}
-			printf ("Mean-BandWidth %lf Gbps\n",
-			        (totalBytes / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
+			printf (
+			    "Mean-BandWidth %lf Gbps\n",
+			    (totalBytes * 8 / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
 			printf ("Mean-Latency %lf ns\n", sumLatency / (((double)trainLen - ignored)));
 
 			// Ignored / Dropped stats
@@ -464,7 +466,6 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 			if (stats.oerrors > 0) {
 				printf ("%ld Packets errored in TX\n", stats.oerrors);
 			}
-			rte_eth_stats_get (port, &stats);
 			printf ("Port %d stats: %lu/%lu/%lu/%lu Pkts  sent/recv/ierror/imissed\n",
 			        port,
 			        stats.opackets,
@@ -810,6 +811,18 @@ static void app_lcore_main_loop_io (void) {
 
 			if (likely (lp->tx.n_nic_queues > 0)) {
 				app_lcore_io_tx_sts (lp, app.burst_size_io_tx_write);
+			}
+
+			i++;
+		}
+	} else if (trainFriends) {
+		while (likely (doloop)) {
+			if (likely (lp->rx.n_nic_queues > 0)) {
+				app_lcore_io_rx_sts (lp, bsz_rx_rd, trainFriends);
+			}
+
+			if (likely (lp->tx.n_nic_queues > 0)) {
+				app_lcore_io_tx_sts (lp, trainFriends);
 			}
 
 			i++;
