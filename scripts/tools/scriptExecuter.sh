@@ -6,8 +6,12 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 #Script to execute
 SCRIPT="$DIR/../interface01.sh $@ 2>> stderr.trash"
 
-FNAME="$DIR/results/$@.txt"
-mkdir -p "$DIR/results"
+if [ -z "$RESULTBASE" ];
+    RESULTBASE="$DIR/results/"
+fi
+
+FNAME=$RESULTBASE/$@.txt"
+mkdir -p "$RESULTBASE"
 
 #awk Script parse
 $SCRIPT > "$FNAME"
