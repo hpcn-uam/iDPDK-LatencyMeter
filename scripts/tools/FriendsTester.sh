@@ -15,7 +15,7 @@ for trainfriends in $TRAINFRIENDS ; do
             rm -f results.$trainsleep.$trainlen.txt
             for pktsize in $PKTSIZES ; do
                 echo "Test $trainsleep $trainlen $pktsize"
-                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends 70 | tee -a results/friendly/$trainfriends/results.$trainsleep.$trainlen.txt
+                $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends 70 | tee -a $RESULTBASE/results.$trainsleep.$trainlen.txt
             done
         done
     done
