@@ -821,6 +821,10 @@ static void app_lcore_main_loop_io (void) {
 				app_lcore_io_rx_sts (lp, bsz_rx_rd, trainFriends);
 			}
 
+			if (trainSleep) {
+				hptl_waitns (trainSleep);
+			}
+
 			if (likely (lp->tx.n_nic_queues > 0)) {
 				app_lcore_io_tx_sts (lp, trainFriends);
 			}
