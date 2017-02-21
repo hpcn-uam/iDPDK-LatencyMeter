@@ -15,7 +15,7 @@ for trainfriends in $TRAINFRIENDS ; do
             for pktsize in $PKTSIZES ; do
                 OUTPARAMS="--trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends $trainfriends"
                 #echo "Test Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
-                if [ -f "$OUTPARAMS.txt" ]; then
+                if [ -f "$RESULTBASE/$OUTPARAMS.txt" ]; then
                     touch /tmp/nothing
                 else
                     echo "Redoing test (not exists) Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
