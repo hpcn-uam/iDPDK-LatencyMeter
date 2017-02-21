@@ -16,7 +16,7 @@ for trainfriends in $TRAINFRIENDS ; do
                 OUTPARAMS="--trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends $trainfriends"
                 #echo "Test Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
                 if [ -f "$OUTPARAMS.txt" ]; then
-
+                    touch /tmp/nothing
                 else
                     echo "Redoing test (not exists) Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
                     $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends $trainfriends
