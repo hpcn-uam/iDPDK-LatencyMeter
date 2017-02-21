@@ -18,7 +18,12 @@ for trainfriends in $TRAINFRIENDS ; do
                 if [ -f "$RESULTBASE/$OUTPARAMS.txt" ]; then
                     ISDOWN=$(grep "Link Down" -c "$RESULTBASE/$OUTPARAMS.txt")
                     if [ "$ISDOWN" -gt "0" ]; then
-                        echo "Discarting File Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
+                        echo "Down-link File Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
+                        rm "$RESULTBASE/$OUTPARAMS.txt"
+                    fi
+                    ISCOMPLETED=$(grep "Mean" -c "$RESULTBASE/$OUTPARAMS.txt")
+                    if [ "$ISCOMPLETED" -lt "0" ]; then
+                        echo "Incomplete File Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
                         rm "$RESULTBASE/$OUTPARAMS.txt"
                     fi
                 else
