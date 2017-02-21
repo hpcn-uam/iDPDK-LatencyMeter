@@ -16,7 +16,10 @@ for trainfriends in $TRAINFRIENDS ; do
                 OUTPARAMS="--trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends $trainfriends"
                 #echo "Test Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
                 if [ -f "$RESULTBASE/$OUTPARAMS.txt" ]; then
-                    touch /tmp/nothing
+                    ISDOWN=$(grep "Link Down" -c "$RESULTBASE/$OUTPARAMS.txt")
+                    if [ "$ISDOWN" -gt "0" ]; then
+                        echo "Discarting File Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
+                    fi
                 else
                     echo "Redoing test (not exists) Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
                     $DIR/scriptExecuter.sh --trainLen $trainlen --trainSleep $trainsleep --pktLen $pktsize --trainFriends $trainfriends
