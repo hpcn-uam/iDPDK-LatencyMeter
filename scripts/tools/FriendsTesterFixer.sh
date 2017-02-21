@@ -22,7 +22,7 @@ for trainfriends in $TRAINFRIENDS ; do
                         rm "$RESULTBASE/$OUTPARAMS.txt"
                     fi
                     ISCOMPLETED=$(grep "Mean" -c "$RESULTBASE/$OUTPARAMS.txt")
-                    if [ "$ISCOMPLETED" -lt "0" ]; then
+                    if [ "$ISCOMPLETED" -lt "2" ]; then
                         echo "Incomplete File Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
                         rm "$RESULTBASE/$OUTPARAMS.txt"
                     fi
