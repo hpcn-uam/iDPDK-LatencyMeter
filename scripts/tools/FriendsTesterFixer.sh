@@ -19,6 +19,7 @@ for trainfriends in $TRAINFRIENDS ; do
                     ISDOWN=$(grep "Link Down" -c "$RESULTBASE/$OUTPARAMS.txt")
                     if [ "$ISDOWN" -gt "0" ]; then
                         echo "Discarting File Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
+                        rm "$RESULTBASE/$OUTPARAMS.txt"
                     fi
                 else
                     echo "Redoing test (not exists) Friend=$trainfriends Sleep=$trainsleep Train=$trainlen Len=$pktsize"
