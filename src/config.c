@@ -391,7 +391,7 @@ extern int hwTimeTest;
 extern uint64_t trainLen;
 extern uint64_t trainSleep;  // ns
 extern uint64_t trainFriends;
-extern uint64_t waitTime;    // ns
+extern uint64_t waitTime;  // ns
 extern unsigned sndpktlen;
 
 extern struct pktLatencyStat *latencyStats;
@@ -481,7 +481,7 @@ static int parse_arg_trainLen (const char *arg) {
 	}
 
 	if (latencyStats)
-		free (latencyStats);
+		rte_free (latencyStats);
 
 	latencyStats = rte_calloc ("latency_stats", trainLen, sizeof (struct pktLatencyStat), 0);
 
@@ -503,7 +503,6 @@ static int parse_arg_trainFriends (const char *arg) {
 
 	return 0;
 }
-
 
 static int parse_arg_waitTime (const char *arg) {
 	if (sscanf (arg, "%lu", &waitTime) != 1) {
@@ -679,9 +678,10 @@ int app_parse_args (int argc, char **argv) {
 				if (!strcmp (lgopts[option_index].name, "trainFriends")) {
 					ret = parse_arg_trainFriends (optarg);
 					if (ret) {
-						printf ("Incorrect value for --trainFriends argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf (
+						    "Incorrect value for --trainFriends argument (%s, error code: %d)\n",
+						    optarg,
+						    ret);
 						return -1;
 					}
 				}
