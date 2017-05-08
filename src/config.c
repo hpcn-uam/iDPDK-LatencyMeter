@@ -771,6 +771,7 @@ int app_parse_args (int argc, char **argv) {
 	if (trainLen == 0) {  // activate bandwidth mode
 		printf ("No trainLength set, activating --bw mode\n");
 		bandWidthMeasure = 1;
+		bandWidthMeasureActive = 1;
 	}
 
 	ret    = optind - 1;
