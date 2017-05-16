@@ -508,6 +508,7 @@ static int parse_arg_waitTime (const char *arg) {
 	if (sscanf (arg, "%lu", &waitTime) != 1) {
 		return -1;
 	}
+	printf("Setting up waitTime to %lu ns.\n",waitTime);
 
 	return 0;
 }
