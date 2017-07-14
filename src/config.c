@@ -31,47 +31,47 @@
  *   OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <inttypes.h>
-#include <sys/types.h>
-#include <string.h>
-#include <sys/queue.h>
-#include <stdarg.h>
 #include <errno.h>
 #include <getopt.h>
+#include <inttypes.h>
+#include <stdarg.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/queue.h>
+#include <sys/types.h>
 
-#include <rte_common.h>
-#include <rte_byteorder.h>
-#include <rte_log.h>
-#include <rte_malloc.h>
-#include <rte_memory.h>
-#include <rte_memcpy.h>
-#include <rte_memzone.h>
-#include <rte_tailq.h>
-#include <rte_eal.h>
-#include <rte_per_lcore.h>
-#include <rte_launch.h>
 #include <rte_atomic.h>
-#include <rte_cycles.h>
-#include <rte_prefetch.h>
-#include <rte_lcore.h>
-#include <rte_per_lcore.h>
 #include <rte_branch_prediction.h>
-#include <rte_interrupts.h>
-#include <rte_pci.h>
-#include <rte_random.h>
+#include <rte_byteorder.h>
+#include <rte_common.h>
+#include <rte_cycles.h>
 #include <rte_debug.h>
-#include <rte_ether.h>
+#include <rte_eal.h>
 #include <rte_ethdev.h>
-#include <rte_ring.h>
-#include <rte_mempool.h>
-#include <rte_mbuf.h>
+#include <rte_ether.h>
+#include <rte_interrupts.h>
 #include <rte_ip.h>
-#include <rte_tcp.h>
+#include <rte_launch.h>
+#include <rte_lcore.h>
+#include <rte_log.h>
 #include <rte_lpm.h>
+#include <rte_malloc.h>
+#include <rte_mbuf.h>
+#include <rte_memcpy.h>
+#include <rte_memory.h>
+#include <rte_mempool.h>
+#include <rte_memzone.h>
+#include <rte_pci.h>
+#include <rte_per_lcore.h>
+#include <rte_per_lcore.h>
+#include <rte_prefetch.h>
+#include <rte_random.h>
+#include <rte_ring.h>
 #include <rte_string_fns.h>
+#include <rte_tailq.h>
+#include <rte_tcp.h>
 
 #include "main.h"
 
@@ -153,7 +153,7 @@ static int str_to_unsigned_array (
     const char *s, size_t sbuflen, char separator, unsigned num_vals, unsigned *vals) {
 	char str[sbuflen + 1];
 	char *splits[num_vals];
-	char *endptr      = NULL;
+	char *endptr = NULL;
 	int i, num_splits = 0;
 
 	/* copy s so we don't modify original string */
@@ -508,7 +508,7 @@ static int parse_arg_waitTime (const char *arg) {
 	if (sscanf (arg, "%lu", &waitTime) != 1) {
 		return -1;
 	}
-	printf("Setting up waitTime to %lu ns.\n",waitTime);
+	printf ("Setting up waitTime to %lu ns.\n", waitTime);
 
 	return 0;
 }
@@ -583,7 +583,7 @@ int app_parse_args (int argc, char **argv) {
 			case 0:
 				if (!strcmp (lgopts[option_index].name, "rx")) {
 					arg_rx = 1;
-					ret = parse_arg_rx (optarg);
+					ret    = parse_arg_rx (optarg);
 					if (ret) {
 						printf ("Incorrect value for --rx argument (%d)\n", ret);
 						return -1;
@@ -591,7 +591,7 @@ int app_parse_args (int argc, char **argv) {
 				}
 				if (!strcmp (lgopts[option_index].name, "tx")) {
 					arg_tx = 1;
-					ret = parse_arg_tx (optarg);
+					ret    = parse_arg_tx (optarg);
 					if (ret) {
 						printf ("Incorrect value for --tx argument (%d)\n", ret);
 						return -1;
@@ -599,7 +599,7 @@ int app_parse_args (int argc, char **argv) {
 				}
 				if (!strcmp (lgopts[option_index].name, "rsz")) {
 					arg_rsz = 1;
-					ret = parse_arg_rsz (optarg);
+					ret     = parse_arg_rsz (optarg);
 					if (ret) {
 						printf ("Incorrect value for --rsz argument (%d)\n", ret);
 						return -1;
@@ -607,7 +607,7 @@ int app_parse_args (int argc, char **argv) {
 				}
 				if (!strcmp (lgopts[option_index].name, "bsz")) {
 					arg_bsz = 1;
-					ret = parse_arg_bsz (optarg);
+					ret     = parse_arg_bsz (optarg);
 					if (ret) {
 						printf ("Incorrect value for --bsz argument (%d)\n", ret);
 						return -1;
@@ -769,9 +769,9 @@ int app_parse_args (int argc, char **argv) {
 		argv[optind - 1] = prgname;
 
 	// Latency app arguments
-	if (trainLen == 0) {  // activate bandwidth mode
+	if (trainLen == 0 && !bandWidthMeasure) {  // activate bandwidth mode
 		printf ("No trainLength set, activating --bw mode\n");
-		bandWidthMeasure = 1;
+		bandWidthMeasure       = 1;
 		bandWidthMeasureActive = 1;
 	}
 
