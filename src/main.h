@@ -89,11 +89,11 @@
 
 /* Mempools */
 #ifndef APP_DEFAULT_MBUF_SIZE
-#define APP_DEFAULT_MBUF_SIZE (9000 /*2048*/ + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
+#define APP_DEFAULT_MBUF_SIZE (2048 + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_BUFFERS
-#define APP_DEFAULT_MEMPOOL_BUFFERS 8192 * 16 * 2
+#define APP_DEFAULT_MEMPOOL_BUFFERS 8192 * 16 * 2 * 4
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_CACHE_SIZE

@@ -318,7 +318,7 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 #if APP_STATS
 		lp->rx.nic_queues_iters[i]++;
 		lp->rx.nic_queues_count[i] += n_mbufs;
-		if (unlikely (lp->rx.nic_queues_iters[i] == APP_STATS * 10)) {
+		if (unlikely (lp->rx.nic_queues_iters[i] >= APP_STATS)) {
 			struct rte_eth_stats stats;
 			struct timeval start_ewr, end_ewr;
 

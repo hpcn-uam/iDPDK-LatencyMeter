@@ -734,6 +734,7 @@ int app_parse_args (int argc, char **argv) {
 				}
 				if (!strcmp (lgopts[option_index].name, "bwp")) {
 					bandWidthMeasure = 1;
+					bandWidthMeasureActive = 0;
 				}
 				if (!strcmp (lgopts[option_index].name, "hw")) {
 					hwTimeTest = 1;
@@ -769,7 +770,7 @@ int app_parse_args (int argc, char **argv) {
 		argv[optind - 1] = prgname;
 
 	// Latency app arguments
-	if (trainLen == 0) {  // activate bandwidth mode
+	if (trainLen == 0 && ! bandWidthMeasure) {  // activate bandwidth mode
 		printf ("No trainLength set, activating --bw mode\n");
 		bandWidthMeasure = 1;
 		bandWidthMeasureActive = 1;

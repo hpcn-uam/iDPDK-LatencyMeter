@@ -79,7 +79,7 @@ static struct rte_eth_conf port_conf = {
     .rxmode =
         {
             .mq_mode        = ETH_MQ_RX_RSS,
-            .max_rx_pkt_len = 9000,  // ETHER_MAX_JUMBO_FRAME_LEN,
+            .max_rx_pkt_len = 1518,  // ETHER_MAX_JUMBO_FRAME_LEN,
             .split_hdr_size = 0,
             .header_split   = 0, /**< Header Split disabled */
             .hw_ip_checksum = 0,
@@ -281,6 +281,8 @@ static void app_init_nics (void) {
 			rte_panic ("Cannot init NIC port %u (%d)\n", (unsigned)port, ret);
 		}
 		rte_eth_promiscuous_enable (port);
+		struct ether_addr myaddr = {.addr_bytes={0x00,0x1b,0x21,0xad,0xa9,0x9c}};
+		rte_eth_dev_default_mac_addr_set (port, &myaddr);
 
 		/* Init RX queues */
 		for (queue = 0; queue < APP_MAX_RX_QUEUES_PER_NIC_PORT; queue++) {
@@ -356,7 +358,7 @@ void app_init (void) {
 	app_init_nics ();
 
 	// HPTL
-	hptl_config conf = {.clockspeed = 0, .precision = 9};
+	hptl_config conf = {.clockspeed = 0, .precision = 8};
 	hptl_init (&conf);
 
 	printf ("Using HPTL %s.\n", hptl_VERSION);

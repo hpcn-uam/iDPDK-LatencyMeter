@@ -17,7 +17,7 @@ git submodule update --init
 cd src
 make -j5 && \
 \
-        sudo build/app/hpcn_latency -c FFF -n 2 -- --rx "(0,0,7)" --tx "(0,0,8),(0,1,9)" \
+        sudo build/app/hpcn_latency -c FFFF -n 4 --socket-mem "8000,8000" --proc-type primary --file-prefix "rte_a" -- --rx "(0,0,7)" --tx "(0,0,10),(0,1,13)" \
                 --rsz "1024, 2048" \
                 --bsz "144, 144" \
 		--trainSleep 0 $@
