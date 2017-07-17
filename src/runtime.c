@@ -331,12 +331,12 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 #ifdef QUEUE_STATS
 			if (queue == 0) {
 #endif
-				printf ("NIC port %u: drop ratio = %.2f (%u/%u) speed: %lf Gbps (%.1lf pkts/s)\n",
+				printf ("NIC port %u: drop ratio = %.2f (%lu/%lu) speed: %lf Gbps (%.1lf pkts/s)\n",
 				        (unsigned)port,
 				        (double)(stats.ierrors + stats.imissed) /
 				            (double)((stats.ierrors + stats.imissed) + stats.ipackets),
-				        (uint32_t)stats.ipackets,
-				        (uint32_t) (stats.ierrors + stats.imissed),
+				        (uint64_t)stats.ipackets,
+				        (uint64_t) (stats.ierrors + stats.imissed),
 				        (((stats.ibytes) + stats.ipackets * (/*4crc+8prelud+12ifg*/ (8 + 12))) /
 				         (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
 				           (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
@@ -628,12 +628,12 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 
 			if (queue == 0) {
 				printf (
-				    "NIC TX port %u: drop ratio = %.2f (%u/%u) usefull-speed: %lf Gbps, "
+				    "NIC TX port %u: drop ratio = %.2f (%lu/%lu) usefull-speed: %lf Gbps, "
 				    "link-speed: %lf Gbps (%.1lf pkts/s)\n",
 				    (unsigned)port,
 				    (double)stats.oerrors / (double)(stats.oerrors + stats.opackets),
-				    (uint32_t)stats.opackets,
-				    (uint32_t)stats.oerrors,
+				    (uint64_t)stats.opackets,
+				    (uint64_t)stats.oerrors,
 				    (stats.obytes / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
 				                      (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
 				                     1000000.)) /
@@ -779,6 +779,7 @@ static void app_lcore_main_loop_io (void) {
 	// uint8_t pos_lb = app.pos_lb;
 
 	app_lcore_arp_tx_gratuitous (lp);
+	gettimeofday (&lp->tx.start_ewr, NULL);
 
 	if (bandWidthMeasureActive) {  // only measure bw
 		while (likely (doloop)) {
