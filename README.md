@@ -1,4 +1,4 @@
-[Alpha] High Speed Latency-Metter using DPDK 
+[Alpha] High Speed Latency-Meter using DPDK 
 =================
 
 This application allows to measure the network's Latency and Bandwith.
@@ -9,7 +9,7 @@ Clonning
 To clone this project execute:
 
 ````
-git clone git@github.com:hpcn-uam/iDPDK-LatencyMetter.git
+git clone git@github.com:hpcn-uam/iDPDK-LatencyMeter.git
 git submodule update --init --recursive
 ````
 
