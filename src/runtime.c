@@ -1,6 +1,4 @@
-/*-
- *   BSD LICENSE
- *
+/*- *   BSD LICENSE *
  *   Copyright(c) 2010-2014 Intel Corporation. All rights reserved.
  *   All rights reserved.
  *
@@ -51,6 +49,7 @@
 #include <rte_eal.h>
 #include <rte_ethdev.h>
 #include <rte_ether.h>
+#include <rte_flow.h>
 #include <rte_interrupts.h>
 #include <rte_ip.h>
 #include <rte_launch.h>
@@ -63,7 +62,6 @@
 #include <rte_mempool.h>
 #include <rte_memzone.h>
 #include <rte_pci.h>
-#include <rte_per_lcore.h>
 #include <rte_per_lcore.h>
 #include <rte_prefetch.h>
 #include <rte_random.h>
@@ -125,35 +123,49 @@
 #define APP_IO_TX_PREFETCH1(p)
 #endif
 
-#define icmpStart (6 + 6 + 2 + 5 * 4)
+#ifdef APP_LIMITBW
+uint64_t bwlimitNSwait = 0;
+#endif
 
-uint8_t arppkt[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x84, 0x2b, 0x2b, 0x6b, 0x4d, 0x61,
-                    0x08, 0x06, 0x00, 0x01, 0x08, 0x00, 0x06, 0x04, 0x00, 0x02, 0x84, 0x2b,
-                    0x2b, 0x6b, 0x4d, 0x61, 0xc0, 0xa8, 0x00, 0x78, 0x00, 0x00, 0x00, 0x00,
-                    0x00, 0x00, 0xc0, 0xa8, 0x00, 0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+#define icmpStart (6 + 6 + 2 + 5 * 4 + VLAN_OFFSET)
+
+uint8_t arppkt[] = {0xff, 0xff, 0xff, 0xff,    0xff, 0xff, 0xac, 0x1f, 0x6b, 0x8a, 0x06, 0xe0,
+#if VLAN_ID
+                    0x81, 0x00, 0x00, VLAN_ID,
+#endif
+                    0x08, 0x06, 0x00, 0x01,    0x08, 0x00, 0x06, 0x04, 0x00, 0x02, 0xac, 0x1f, 0x6b, 0x8a, 0x06,
+                    0xe0, 0x0a, 0xa8, 0x00,    0x78, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0xa8, 0x00, 0x78,
+#if VLAN_ID
+#else
+                    0x00, 0x00, 0x00, 0x00,
+#endif
+                    0x00, 0x00, 0x00, 0x00,    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 int arppktlen = sizeof (arppkt);
 
-uint8_t icmppkt[] = {0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c, 0x14, 0xdd, 0xa9, 0xd2, 0xef, 0x57, 0x08,
-                     0x00, 0x45, 0x00, 0x00, 0x54, 0x51, 0x36, 0x40, 0x00, 0x40, 0x01, 0x6b, 0xee,
-                     0x96, 0xf4, 0x3a, 0x72, 0xd8, 0x3a, 0xd3, 0xe3, 0x08, 0x00, 0x00, 0x00, 0x66,
-                     0x02, 0x00, 0x1a, 0x67, 0x72, 0x97, 0x57, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff,
-                     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-                     0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23,
-                     0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30,
-                     0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
+//:AC:1F:6B:8A:6:E0
+// 0x00, 0x1B, 0x21, 0xd8, 0x00, 0x01
+uint8_t icmppkt[] = {0x00, 0x1B, 0x21, 0x19,    0x00, 0x01, 0xac, 0x1f, 0x6b, 0x8a, 0x06, 0xe1,
+#if VLAN_ID
+                     0x81, 0x00, 0x00, VLAN_ID,
+#endif
+                     0x08, 0x00, 0x45, 0x00,    0x00, 0x54, 0x51, 0x36, 0x00, 0x00, 0x40, 0x01, 0x6b, 0xee, 0x96,
+                     0xf4, 0x3a, 0x72, 0xd8,    0x3a, 0xd3, 0xe3, 0x08, 0x00, 0x00, 0x00, 0x66, 0x02, 0x00, 0x1a,
+                     0x67, 0x72, 0x97, 0x57,    0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+                     0xff, 0x10, 0x11, 0x12,    0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d,
+                     0x1e, 0x1f, 0x20, 0x21,    0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c,
+                     0x2d, 0x2e, 0x2f, 0x30,    0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37};
 
 #define TSIDTYPE uint16_t
 const uint32_t tspacketId = 0xCACACACA;
 const uint32_t tsoffset   = 40;
 
 const unsigned icmppktlen     = sizeof (icmppkt);
-const unsigned icmpidoffset   = 36;
-const unsigned icmpcntroffset = 38;
+const unsigned icmpidoffset   = 36 + VLAN_OFFSET;
+const unsigned icmpcntroffset = 38 + VLAN_OFFSET;
 
 unsigned sndpktlen  = sizeof (icmppkt);
-unsigned idoffset   = 36;  // = icmpidoffset
-unsigned cntroffset = 38;  // = icmpcntroffset
+unsigned idoffset   = 36 + VLAN_OFFSET;  // = icmpidoffset
+unsigned cntroffset = 38 + VLAN_OFFSET;  // = icmpcntroffset
 
 // fpga timer conversion proportion
 const float fpgaConvRate = 4.294967296;
@@ -210,15 +222,13 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
-						uint64_t fpgatime = ntohl (latencyStats[k].hwTime.tv_sec) * 1000000000 +
-						                    ntohl (latencyStats[k].hwTime.tv_nsec);
+						uint64_t fpgatime =
+						    ntohl (latencyStats[k].hwTime.tv_sec) * 1000000000 + ntohl (latencyStats[k].hwTime.tv_nsec);
 						fpgatime /= fpgaConvRate;
 						latencyStats[k].hwTime.tv_sec  = fpgatime / 1000000000;
 						latencyStats[k].hwTime.tv_nsec = fpgatime % 1000000000;
 
-						printf (" hwTime %lu.%lu",
-						        latencyStats[k].hwTime.tv_sec,
-						        latencyStats[k].hwTime.tv_nsec);
+						printf (" hwTime %lu.%lu", latencyStats[k].hwTime.tv_sec, latencyStats[k].hwTime.tv_nsec);
 						if (lastTime != 0) {
 							printf (" hwDeltaLatency %lu.%lu",
 							        latencyStats[k].hwTime.tv_sec - hwDelta.tv_sec,
@@ -246,9 +256,8 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 					ignored++;
 				}
 			}
-			printf (
-			    "Mean-BandWidth %lf Gbps\n",
-			    (totalBytes * 8 / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
+			printf ("Mean-BandWidth %lf Gbps\n",
+			        (totalBytes * 8 / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
 			printf ("Mean-Latency %lf ns\n", sumLatency / (((double)trainLen - ignored)));
 
 			// Ignored / Dropped stats
@@ -267,9 +276,8 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 			continue;
 		}
 
-		if (trainLen &&
-		    (*(uint16_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + idoffset)) ==
-		        (*(uint16_t *)(icmppkt + idoffset))) {
+		if (trainLen && (*(uint16_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + idoffset)) ==
+		                    (*(uint16_t *)(icmppkt + idoffset))) {
 			// Add counter #recvPkts-1, so the data is saved in the structure as "the last packet of
 			// the bulk, instead of the first one"
 			counter += n_mbufs - 1;
@@ -282,9 +290,9 @@ static inline void app_lcore_io_rx (struct app_lcore_params_io *lp, uint32_t bsz
 			latencyStats[counter].recved = 1;
 			if (hwTimeTest) {
 				latencyStats[counter].hwTime.tv_sec =
-				    *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 50);
+				    *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 50 + VLAN_OFFSET);
 				latencyStats[counter].hwTime.tv_nsec =
-				    *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 54);
+				    *(uint32_t *)(rte_ctrlmbuf_data (lp->rx.mbuf_in.array[n_mbufs - 1]) + 54 + VLAN_OFFSET);
 			}
 
 			// end if all packets have been recved
@@ -318,71 +326,62 @@ static inline void app_lcore_io_rx_bw (struct app_lcore_params_io *lp, uint32_t 
 #if APP_STATS
 		lp->rx.nic_queues_iters[i]++;
 		lp->rx.nic_queues_count[i] += n_mbufs;
+
 		if (unlikely (lp->rx.nic_queues_iters[i] >= APP_STATS)) {
 			struct rte_eth_stats stats;
 			struct timeval start_ewr, end_ewr;
 
-			rte_eth_stats_get (port, &stats);
-			gettimeofday (&lp->rx.end_ewr, NULL);
-
-			start_ewr = lp->rx.start_ewr;
-			end_ewr   = lp->rx.end_ewr;
-
-#ifdef QUEUE_STATS
 			if (queue == 0) {
-#endif
-				printf ("NIC port %u: drop ratio = %.2f (%lu/%lu) speed: %lf Gbps (%.1lf pkts/s)\n",
-				        (unsigned)port,
-				        (double)(stats.ierrors + stats.imissed) /
-				            (double)((stats.ierrors + stats.imissed) + stats.ipackets),
-				        (uint64_t)stats.ipackets,
-				        (uint64_t) (stats.ierrors + stats.imissed),
-				        (((stats.ibytes) + stats.ipackets * (/*4crc+8prelud+12ifg*/ (8 + 12))) /
-				         (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
-				           (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
-				          1000000.)) /
-				            (1000 * 1000 * 1000. / 8.),
-				        stats.ipackets / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
-				                           (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
-				                          1000000.));
-#ifdef QUEUE_STATS
-			}
-			printf (
-			    "NIC port %u:%u: drop ratio = %.2f (%u/%u) speed %.1lf pkts/s\n",
-			    (unsigned)port,
-			    queue,
-			    (double)stats.ierrors / (double)(stats.ierrors + lp->rx.nic_queues_count[i]),
-			    (uint32_t)lp->rx.nic_queues_count[i],
-			    (uint32_t)stats.ierrors,
-			    lp->rx.nic_queues_count[i] / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
-			                                   (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
-			                                  1000000.));
-#endif
-			lp->rx.nic_queues_iters[i] = 0;
-			lp->rx.nic_queues_count[i] = 0;
+				rte_eth_stats_get (port, &stats);
+				gettimeofday (&lp->rx.end_ewr, NULL);
 
-#ifdef QUEUE_STATS
-			if (queue == 0)
-#endif
+				start_ewr = lp->rx.start_ewr;
+				end_ewr   = lp->rx.end_ewr;
+
 				rte_eth_stats_reset (port);
+				if (lp->rx.start_ewr.tv_sec == 0) {
+					rte_eth_stats_reset (port);
+					lp->rx.start_ewr = lp->rx.end_ewr;
+				} else {
+					// printf("vlan.id = %d\n",rte_ctrlmbuf_data (lp->rx.mbuf_in.array[0])[15]);
+					printf ("NIC port %u: drop ratio = %.2f = %lu / %lu\t%lf\t%lf\t%.1lf\n",
+					        (unsigned)port,
+					        (double)(stats.ierrors + stats.imissed) /
+					            (double)((stats.ierrors + stats.imissed) + stats.ipackets),
+					        (uint64_t)stats.ipackets,
+					        (uint64_t) (stats.ierrors + stats.imissed),
+					        (((stats.ibytes)) / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
+					                              (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
+					                             1000000.)) /
+					            (1000 * 1000 * 1000. / 8.),
+					        (((stats.ibytes) + stats.ipackets * (/*4crc+8prelud+12ifg*/ (8 + 12))) /
+					         (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
+					           (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
+					          1000000.)) /
+					            (1000 * 1000 * 1000. / 8.),
+					        stats.ipackets / (((end_ewr.tv_sec * 1000000. + end_ewr.tv_usec) -
+					                           (start_ewr.tv_sec * 1000000. + start_ewr.tv_usec)) /
+					                          1000000.));
 
-#ifdef QUEUE_STATS
-			if (queue == 0)
-#endif
-				lp->rx.start_ewr = end_ewr;  // Updating start
+					lp->rx.nic_queues_iters[i] = 0;
+					lp->rx.nic_queues_count[i] = 0;
+					lp->rx.start_ewr           = end_ewr;  // Updating start
+				}
+			} else {
+				// printf("Hi from queue %d\n",queue);
+			}
 		}
 #endif
 
 		for (j = 0; j < n_mbufs; j++) {
 			struct rte_mbuf *pkt = lp->rx.mbuf_in.array[j];
+			hptl_get ();
 			rte_pktmbuf_free (pkt);
 		}
 	}
 }
 
-static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
-                                        uint32_t bsz_rd,
-                                        uint32_t stsw) {
+static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp, uint32_t bsz_rd, uint32_t stsw) {
 	uint32_t i;
 
 	static uint32_t counter = 0;
@@ -406,22 +405,19 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 			for (k = 0; k < trainLen; k++) {
 				if (latencyStats[k].recved) {
 					uint64_t currentLatency = latencyStats[k].recvTime - latencyStats[k].sentTime;
-					uint64_t fixedLatency =
-					    currentLatency - (stsw - 1) * (latencyStats[k].pktLen * 8 + 24) / 10.;
+					uint64_t fixedLatency   = currentLatency - (stsw - 1) * (latencyStats[k].pktLen * 8 + 24) / 10.;
 					printf ("%d: Latency %lu ns", k + 1, currentLatency);
 					printf (" Estimated %lu ns", fixedLatency);
 					sumLatency += currentLatency;
 					if (hwTimeTest) {
 						// fpga time conversion
-						uint64_t fpgatime = ntohl (latencyStats[k].hwTime.tv_sec) * 1000000000 +
-						                    ntohl (latencyStats[k].hwTime.tv_nsec);
+						uint64_t fpgatime =
+						    ntohl (latencyStats[k].hwTime.tv_sec) * 1000000000 + ntohl (latencyStats[k].hwTime.tv_nsec);
 						fpgatime /= fpgaConvRate;
 						latencyStats[k].hwTime.tv_sec  = fpgatime / 1000000000;
 						latencyStats[k].hwTime.tv_nsec = fpgatime % 1000000000;
 
-						printf (" hwTime %lu.%lu",
-						        latencyStats[k].hwTime.tv_sec,
-						        latencyStats[k].hwTime.tv_nsec);
+						printf (" hwTime %lu.%lu", latencyStats[k].hwTime.tv_sec, latencyStats[k].hwTime.tv_nsec);
 						if (lastTime != 0) {
 							printf (" hwDeltaLatency %lu.%lu",
 							        latencyStats[k].hwTime.tv_sec - hwDelta.tv_sec,
@@ -449,9 +445,8 @@ static inline void app_lcore_io_rx_sts (struct app_lcore_params_io *lp,
 					ignored++;
 				}
 			}
-			printf (
-			    "Mean-BandWidth %lf Gbps\n",
-			    (totalBytes * 8 / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
+			printf ("Mean-BandWidth %lf Gbps\n",
+			        (totalBytes * 8 / 1000000000.) / (((double)lastTime - firstTime) / 1000000000.));
 			printf ("Mean-Latency %lf ns\n", sumLatency / (((double)trainLen - ignored)));
 
 			// Ignored / Dropped stats
@@ -544,7 +539,7 @@ static inline void app_lcore_io_tx (struct app_lcore_params_io *lp) {
 
 		n_mbufs = 1;
 
-		struct rte_mbuf *tmpbuf = rte_ctrlmbuf_alloc (app.pools[0]);
+		struct rte_mbuf *tmpbuf = rte_ctrlmbuf_alloc (app.pools[1]);
 		if (!tmpbuf) {
 			continue;
 		}
@@ -563,8 +558,7 @@ static inline void app_lcore_io_tx (struct app_lcore_params_io *lp) {
 		if (doChecksum) {
 			uint16_t cksum;
 			cksum = rte_raw_cksum (rte_ctrlmbuf_data (tmpbuf) + icmpStart, sndpktlen - icmpStart);
-			*((uint16_t *)(rte_ctrlmbuf_data (tmpbuf) + icmpStart + 2)) =
-			    ((cksum == 0xffff) ? cksum : ~cksum);
+			*((uint16_t *)(rte_ctrlmbuf_data (tmpbuf) + icmpStart + 2)) = ((cksum == 0xffff) ? cksum : ~cksum);
 		}
 
 		n_pkts = rte_eth_tx_burst (port, queue, &tmpbuf, n_mbufs);
@@ -598,7 +592,7 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 		n_mbufs = bsz_wr;
 
 		for (k = 0; k < n_mbufs; k++) {
-			lp->tx.mbuf_out[port].array[k] = rte_ctrlmbuf_alloc (app.pools[0]);
+			lp->tx.mbuf_out[port].array[k] = rte_ctrlmbuf_alloc (app.pools[1]);
 			if (lp->tx.mbuf_out[port].array[k] == NULL) {
 				n_mbufs = k;
 				break;
@@ -609,6 +603,10 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 			lp->tx.mbuf_out[port].array[k]->port     = port;
 
 			memcpy (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]), icmppkt, icmppktlen);
+			*(uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + 26 + VLAN_OFFSET) =
+			    htons (k + lp->tx.nic_queues_count[i] + 2);
+			*(uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[k]) + 30 + VLAN_OFFSET) =
+			    htons (k + lp->tx.nic_queues_count[i] + 2);
 		}
 
 		n_pkts = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array, n_mbufs);
@@ -616,7 +614,16 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 #if APP_STATS
 		lp->tx.nic_queues_iters[i]++;
 		lp->tx.nic_queues_count[i] += n_mbufs;
-		if (unlikely (lp->tx.nic_queues_iters[i] == APP_STATS)) {
+		lp->tx.nic_mbufs_count += n_pkts;
+
+		if (lp->tx.nic_mbufs_count >= 25 * 1000 * 10005) {
+			printf ("He terminado, a dormir\n");
+			fflush (stdout);
+			while (1)
+				;
+		}
+
+		if (unlikely (lp->tx.nic_queues_iters[i] == APP_STATS / 10)) {
 			struct rte_eth_stats stats;
 			struct timeval start_ewr, end_ewr;
 
@@ -628,7 +635,7 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 
 			if (queue == 0) {
 				printf (
-				    "NIC TX port %u: drop ratio = %.2f (%lu/%lu) usefull-speed: %lf Gbps, "
+				    "NIC TX port %u: drop ratio = %.2f (%lu/%lu) useful-speed: %lf Gbps, "
 				    "link-speed: %lf Gbps (%.1lf pkts/s)\n",
 				    (unsigned)port,
 				    (double)stats.oerrors / (double)(stats.oerrors + stats.opackets),
@@ -656,6 +663,10 @@ static inline void app_lcore_io_tx_bw (struct app_lcore_params_io *lp, uint32_t 
 		}
 #endif
 
+#ifdef APP_LIMITBW
+		hptl_waitns (bwlimitNSwait);
+#endif
+
 		if (unlikely (n_pkts < n_mbufs)) {
 			for (k = n_pkts; k < n_mbufs; k++) {
 				struct rte_mbuf *pkt_to_free = lp->tx.mbuf_out[port].array[k];
@@ -676,7 +687,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		n_mbufs = bsz_wr;
 
 		for (k = 0; k < n_mbufs; k++) {
-			lp->tx.mbuf_out[port].array[k] = rte_ctrlmbuf_alloc (app.pools[0]);
+			lp->tx.mbuf_out[port].array[k] = rte_ctrlmbuf_alloc (app.pools[1]);
 			if (lp->tx.mbuf_out[port].array[k] == NULL) {
 				n_mbufs = k;
 				break;
@@ -692,12 +703,10 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		}
 
 		if (queue == 0) {
-			*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + idoffset)) =
-			    (TSIDTYPE)tspacketId;
+			*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + idoffset)) = (TSIDTYPE)tspacketId;
 
 			if (autoIncNum) {
-				*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + cntroffset)) =
-				    pktcounter++;
+				*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + cntroffset)) = pktcounter++;
 				if (pktcounter > trainLen) {
 					hptl_waitns (waitTime);
 					continueRX = 0;
@@ -706,14 +715,13 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 				}
 			}
 
-			*(hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset) =
-			    hptl_get ();
+			*(hptl_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + tsoffset) = hptl_get ();
 		}
 
 		if (doChecksum) {
 			uint16_t cksum;
-			cksum = rte_raw_cksum (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + icmpStart,
-			                       sndpktlen - icmpStart);
+			cksum =
+			    rte_raw_cksum (rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + icmpStart, sndpktlen - icmpStart);
 			*((uint16_t *)(rte_ctrlmbuf_data (lp->tx.mbuf_out[port].array[0]) + icmpStart + 2)) =
 			    ((cksum == 0xffff) ? cksum : ~cksum);
 		}
@@ -729,8 +737,7 @@ static inline void app_lcore_io_tx_sts (struct app_lcore_params_io *lp, uint32_t
 		} else {
 			while (unlikely (n_pkts < n_mbufs)) {
 				uint64_t tmp;
-				tmp = rte_eth_tx_burst (
-				    port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
+				tmp = rte_eth_tx_burst (port, queue, lp->tx.mbuf_out[port].array + n_pkts, n_mbufs - n_pkts);
 				n_pkts += tmp;
 			}
 		}
@@ -743,7 +750,7 @@ static void app_lcore_arp_tx_gratuitous (struct app_lcore_params_io *lp) {
 		uint8_t port  = lp->tx.nic_queues[i].port;
 		uint8_t queue = lp->tx.nic_queues[i].queue;
 
-		struct rte_mbuf *tmpbuf = rte_ctrlmbuf_alloc (app.pools[0]);
+		struct rte_mbuf *tmpbuf = rte_ctrlmbuf_alloc (app.pools[1]);
 		if (!tmpbuf) {
 			puts ("Error creating gratuitous ARP");
 			exit (-1);
@@ -756,9 +763,15 @@ static void app_lcore_arp_tx_gratuitous (struct app_lcore_params_io *lp) {
 		memcpy (rte_ctrlmbuf_data (tmpbuf), arppkt, arppktlen);
 
 		rte_eth_macaddr_get (port, (struct ether_addr *)(rte_ctrlmbuf_data (tmpbuf) + 6));
-		rte_eth_macaddr_get (port,
-		                     (struct ether_addr *)(rte_ctrlmbuf_data (tmpbuf) + 6 + 6 + 2 + 8));
-		memcpy (rte_ctrlmbuf_data (tmpbuf) + 6 + 6 + 2 + 14, icmppkt + 6 + 6 + 2 + 4 * 4, 4);
+		rte_eth_macaddr_get (port, (struct ether_addr *)(rte_ctrlmbuf_data (tmpbuf) + 6 + 6 + 2 + 8 + VLAN_OFFSET));
+		// memcpy (rte_ctrlmbuf_data (tmpbuf) + 6 + 6 + 2 + 14, icmppkt + 6 + 6 + 2 + 4 * 4, 4);
+
+		/*printf ("PKT:\n");
+		for (int k = 0; k < arppktlen; k++) {
+		    printf ("%02hhX,", rte_ctrlmbuf_data (tmpbuf)[k]);
+		}
+		printf ("\n");
+		exit (0);*/
 
 		if (!rte_eth_tx_burst (port, queue, &tmpbuf, 1)) {
 			puts ("Error sending gratuitous ARP");
@@ -780,6 +793,8 @@ static void app_lcore_main_loop_io (void) {
 
 	app_lcore_arp_tx_gratuitous (lp);
 	gettimeofday (&lp->tx.start_ewr, NULL);
+	lp->rx.start_ewr        = lp->tx.start_ewr;
+	lp->rx.start_ewr.tv_sec = 0;
 
 	if (bandWidthMeasureActive) {  // only measure bw
 		while (likely (doloop)) {
@@ -798,6 +813,13 @@ static void app_lcore_main_loop_io (void) {
 			if (likely (lp->rx.n_nic_queues > 0)) {
 				app_lcore_io_rx_bw (lp, bsz_rx_rd);
 			}
+
+#if APP_STATS
+			if (i > APP_STATS * 1000) {
+				app_lcore_arp_tx_gratuitous (lp);
+				i = 0;
+			}
+#endif
 
 			i++;
 		}

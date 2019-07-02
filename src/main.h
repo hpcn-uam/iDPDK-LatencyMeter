@@ -37,6 +37,14 @@
 #include <stdio.h>
 #include "hptl.h"
 
+/* VLAN CONTROL */
+#define VLAN_ID 7
+#if VLAN_ID
+#define VLAN_OFFSET 4
+#else
+#define VLAN_OFFSET 0
+#endif
+
 /* Logical cores */
 #ifndef APP_MAX_SOCKETS
 #define APP_MAX_SOCKETS 2
@@ -89,11 +97,11 @@
 
 /* Mempools */
 #ifndef APP_DEFAULT_MBUF_SIZE
-#define APP_DEFAULT_MBUF_SIZE (2048 + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
+#define APP_DEFAULT_MBUF_SIZE (/*2048*/ ETHER_MAX_JUMBO_FRAME_LEN + sizeof (struct rte_mbuf) + RTE_PKTMBUF_HEADROOM)
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_BUFFERS
-#define APP_DEFAULT_MEMPOOL_BUFFERS 8192 * 16 * 2 * 4
+#define APP_DEFAULT_MEMPOOL_BUFFERS 8192 * 16 * 2 * 4 / 16
 #endif
 
 #ifndef APP_DEFAULT_MEMPOOL_CACHE_SIZE
@@ -166,6 +174,9 @@
 #define APP_DEFAULT_NIC_TX_RS_THRESH 0
 #endif
 
+// Allow bandwidth limitations
+#define APP_LIMITBW 1
+
 /* Bursts */
 #ifndef APP_MBUF_ARRAY_SIZE
 #define APP_MBUF_ARRAY_SIZE 512
@@ -198,12 +209,7 @@ struct app_mbuf_array {
 	uint32_t n_mbufs;
 };
 
-enum app_lcore_type {
-	e_APP_LCORE_DISABLED = 0,
-	e_APP_LCORE_IO,
-	e_APP_LCORE_WORKER,
-	e_APP_LCORE_WORKER_SLAVE
-};
+enum app_lcore_type { e_APP_LCORE_DISABLED = 0, e_APP_LCORE_IO, e_APP_LCORE_WORKER, e_APP_LCORE_WORKER_SLAVE };
 
 #include <sys/time.h>
 struct app_lcore_params_io {
@@ -245,6 +251,7 @@ struct app_lcore_params_io {
 		uint8_t mbuf_out_flush[APP_MAX_NIC_TX_PORTS_PER_IO_LCORE];
 
 		/* Stats */
+		uint32_t nic_mbufs_count;
 		uint32_t nic_queues_count[APP_MAX_NIC_RX_QUEUES_PER_IO_LCORE];
 		uint32_t nic_queues_iters[APP_MAX_NIC_RX_QUEUES_PER_IO_LCORE];
 		uint32_t nic_ports_count[APP_MAX_NIC_TX_PORTS_PER_IO_LCORE];

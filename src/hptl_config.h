@@ -1,21 +1,22 @@
 #ifndef __HPTL_CONF__H__
 #define __HPTL_CONF__H__
 
-//Basic defines for processing other defines
-#define HBC_xstr(a) HBC_str(a)
+// Basic defines for processing other defines
+#define HBC_xstr(a) HBC_str (a)
 #define HBC_str(a) #a
 
-//The current version
-#define hptl_VERSION_trash v0.9.5-18-g58c94b6
+// The current version
+#define hptl_VERSION_trash v0 .9.5 - 18 - g58c94b6
 
-#define hptl_VERSION HBC_xstr(hptl_VERSION_trash)
+#define hptl_VERSION HBC_xstr (hptl_VERSION_trash)
 
-//Is hptl debug on?
+// Is hptl debug on?
 #define HPTL_DEBUG
 
 #define HPTL_TSC
 #define HPTL_CLOCKREALTIME
 /* #undef HPTL_ONLYLINUXAPI */
+#define HPTL_ONLYLINUXAPI
 #define HPTL_128b
 #define HPTL_128b_mixed
 

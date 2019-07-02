@@ -51,6 +51,7 @@
 #include <rte_eal.h>
 #include <rte_ethdev.h>
 #include <rte_ether.h>
+#include <rte_flow.h>
 #include <rte_interrupts.h>
 #include <rte_ip.h>
 #include <rte_launch.h>
@@ -63,7 +64,6 @@
 #include <rte_mempool.h>
 #include <rte_memzone.h>
 #include <rte_pci.h>
-#include <rte_per_lcore.h>
 #include <rte_per_lcore.h>
 #include <rte_prefetch.h>
 #include <rte_random.h>
@@ -79,21 +79,20 @@ static struct rte_eth_conf port_conf = {
     .rxmode =
         {
             .mq_mode        = ETH_MQ_RX_RSS,
-            .max_rx_pkt_len = 1518,  // ETHER_MAX_JUMBO_FRAME_LEN,
+            .max_rx_pkt_len = 9212,  // 1518,  // ETHER_MAX_JUMBO_FRAME_LEN,
             .split_hdr_size = 0,
-            .header_split   = 0, /**< Header Split disabled */
-            .hw_ip_checksum = 0,
-            /**< IP checksum offload enabled */  // DISABLED!
-            .hw_vlan_filter = 0,                 /**< VLAN filtering disabled */
-            .jumbo_frame    = 1,
-            /**< Jumbo Frame Support disabled */  // ENABLED!
-            .hw_strip_crc = 0,                    /**< CRC stripped by hardware */
+            .header_split   = 1, /**< Header Split disabled */
+            .hw_ip_checksum = 0, /**< IP checksum offload disabled */
+            .hw_vlan_filter = 0, /**< VLAN filtering disabled */
+            .jumbo_frame    = 1, /**< Jumbo Frame Support enabled */
+            .hw_strip_crc = 0, /**< CRC stripped by hardware */
         },
     .rx_adv_conf =
         {
             .rss_conf =
                 {
-                    .rss_key = NULL, .rss_hf = ETH_RSS_IP,
+                    .rss_key = NULL,
+                    .rss_hf  = ETH_RSS_IP,
                 },
         },
     .txmode =
@@ -180,8 +179,7 @@ static void app_init_rings_tx (void) {
 				continue;
 			}
 
-			if (app_get_lcore_for_nic_tx ((uint8_t)port, 0, &lcore_io) <
-			    0) {  // TODO check other queues
+			if (app_get_lcore_for_nic_tx ((uint8_t)port, 0, &lcore_io) < 0) {  // TODO check other queues
 				rte_panic (
 				    "Algorithmic error (no I/O core to handle TX of port %u "
 				    "and queue 0)\n",
@@ -220,10 +218,12 @@ static void check_all_ports_link_status (uint8_t port_num, uint32_t port_mask) {
 					    "Mbps - %s\n",
 					    (uint8_t)portid,
 					    (unsigned)link.link_speed,
-					    (link.link_duplex == ETH_LINK_FULL_DUPLEX) ? ("full-duplex")
-					                                               : ("half-duplex\n"));
-				else
+					    (link.link_duplex == ETH_LINK_FULL_DUPLEX) ? ("full-duplex") : ("half-duplex\n"));
+				else {
 					printf ("Port %d Link Down\n", (uint8_t)portid);
+					//					portid--;
+					rte_delay_ms (CHECK_INTERVAL * 2);
+				}
 				continue;
 			}
 			/* clear all_ports_up flag if any link down */
@@ -252,6 +252,7 @@ static void check_all_ports_link_status (uint8_t port_num, uint32_t port_mask) {
 
 extern uint8_t icmppkt[];
 extern uint8_t arppkt[];
+extern unsigned sndpktlen;
 
 static void app_init_nics (void) {
 	unsigned socket;
@@ -276,12 +277,22 @@ static void app_init_nics (void) {
 
 		/* Init port */
 		printf ("Initializing NIC port %u ...\n", (unsigned)port);
+
 		ret = rte_eth_dev_configure (port, (uint8_t)n_rx_queues, (uint8_t)n_tx_queues, &port_conf);
 		if (ret < 0) {
 			rte_panic ("Cannot init NIC port %u (%d)\n", (unsigned)port, ret);
 		}
 		rte_eth_promiscuous_enable (port);
-		struct ether_addr myaddr = {.addr_bytes={0x00,0x1b,0x21,0xad,0xa9,0x9c}};
+
+		// set MAC
+		struct ether_addr myaddr = {.addr_bytes = {0x00, 0x1b, 0x21, 0xad, 0xa9, 0x9c}};
+		// get pci-id
+		char name[RTE_ETH_NAME_MAX_LEN];
+		rte_eth_dev_get_name_by_port (port, name);
+
+		sscanf (name, "0000:%02hhx:%02hhx.%02hhx", myaddr.addr_bytes + 3, myaddr.addr_bytes + 4, myaddr.addr_bytes + 5);
+
+		rte_eth_dev_mac_addr_add (port, &myaddr, 0);
 		rte_eth_dev_default_mac_addr_set (port, &myaddr);
 
 		/* Init RX queues */
@@ -295,13 +306,9 @@ static void app_init_nics (void) {
 			pool   = app.lcore_params[lcore].pool;
 
 			printf ("Initializing NIC port %u RX queue %u ...\n", (unsigned)port, (unsigned)queue);
-			ret = rte_eth_rx_queue_setup (
-			    port, queue, (uint16_t)app.nic_rx_ring_size, socket, &rx_conf, pool);
+			ret = rte_eth_rx_queue_setup (port, queue, (uint16_t)app.nic_rx_ring_size, socket, &rx_conf, pool);
 			if (ret < 0) {
-				rte_panic ("Cannot init RX queue %u for port %u (%d)\n",
-				           (unsigned)queue,
-				           (unsigned)port,
-				           ret);
+				rte_panic ("Cannot init RX queue %u for port %u (%d)\n", (unsigned)queue, (unsigned)port, ret);
 			}
 		}
 
@@ -315,13 +322,9 @@ static void app_init_nics (void) {
 			socket = rte_lcore_to_socket_id (lcore);
 
 			printf ("Initializing NIC port %u TX queue %u ...\n", (unsigned)port, (unsigned)queue);
-			ret = rte_eth_tx_queue_setup (
-			    port, queue, (uint16_t)app.nic_tx_ring_size, socket, &tx_conf);
+			ret = rte_eth_tx_queue_setup (port, queue, (uint16_t)app.nic_tx_ring_size, socket, &tx_conf);
 			if (ret < 0) {
-				rte_panic ("Cannot init TX queue %u for port %u (%d)\n",
-				           (unsigned)queue,
-				           (unsigned)port,
-				           ret);
+				rte_panic ("Cannot init TX queue %u for port %u (%d)\n", (unsigned)queue, (unsigned)port, ret);
 			}
 		}
 
@@ -331,21 +334,129 @@ static void app_init_nics (void) {
 			rte_panic ("Cannot start port %d (%d)\n", port, ret);
 		}
 
+		/************ FLOW TESTS ************/
+		/*
+		struct rte_flow_attr attr         = {0};
+		attr.ingress                      = 1;
+		struct rte_flow_item pattern[5]   = {0};
+		struct rte_flow_action actions[5] = {0};
+		// struct rte_flow_item_eth eth      = {0};
+		struct rte_flow_action_queue queue = {.index = 0};
+		struct rte_flow_item_vlan vlan     = {0};
+		struct rte_flow *flow;
+		struct rte_flow_error error;
+
+		vlan.tci        = 2048;
+		pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
+		pattern[1].type = RTE_FLOW_ITEM_TYPE_VLAN;
+		pattern[1].spec = &vlan;
+		pattern[2].type = RTE_FLOW_ITEM_TYPE_END;
+
+		actions[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
+		actions[0].conf = &queue;
+		actions[1].type = RTE_FLOW_ACTION_TYPE_END;
+
+		printf ("validating...\n");
+		if (!rte_flow_validate (port, &attr, pattern, actions, &error)) {
+		    printf ("creating...\n");
+		    flow = rte_flow_create (port, &attr, pattern, actions, &error);
+		    printf ("INSERTED FLOWRULE (%p)\n", (void *)flow);
+		} else {
+		    printf ("FLOWRULE FAILED: %s\n", error.message);
+		}
+
+		vlan.tci        = 2304;
+		queue.index     = 1;
+		pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
+		pattern[1].type = RTE_FLOW_ITEM_TYPE_VLAN;
+		pattern[1].spec = &vlan;
+		pattern[2].type = RTE_FLOW_ITEM_TYPE_END;
+
+		actions[0].type = RTE_FLOW_ACTION_TYPE_QUEUE;
+		actions[0].conf = &queue;
+		actions[1].type = RTE_FLOW_ACTION_TYPE_END;
+
+		printf ("validating...\n");
+		if (!rte_flow_validate (port, &attr, pattern, actions, &error)) {
+		    printf ("creating...\n");
+		    flow = rte_flow_create (port, &attr, pattern, actions, &error);
+		    printf ("INSERTED FLOWRULE (%p)\n", (void *)flow);
+		} else {
+		    printf ("FLOWRULE FAILED: %s\n", error.message);
+		}
+
+		pattern[0].type = RTE_FLOW_ITEM_TYPE_ETH;
+		pattern[1].type = RTE_FLOW_ITEM_TYPE_END;
+
+		actions[0].type = RTE_FLOW_ACTION_TYPE_DROP;
+		actions[1].type = RTE_FLOW_ACTION_TYPE_END;
+
+		printf ("validating...\n");
+		if (!rte_flow_validate (port, &attr, pattern, actions, &error)) {
+		    printf ("creating...\n");
+		    flow = rte_flow_create (port, &attr, pattern, actions, &error);
+		    printf ("INSERTED FLOWRULE (%p)\n", (void *)flow);
+		} else {
+		    printf ("FLOWRULE FAILED: %s\n", error.message);
+		}
+		*/
+		/************************************/
+
 		// get current mac addr
 		rte_eth_macaddr_get (port, (struct ether_addr *)(icmppkt + 6));
 		rte_eth_macaddr_get (port, (struct ether_addr *)(arppkt + 6));
-		printf ("Default ETHOrig set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX",
-		        icmppkt[6],
-		        icmppkt[7],
-		        icmppkt[8],
-		        icmppkt[9],
-		        icmppkt[10],
-		        icmppkt[11]);
+		rte_eth_macaddr_get (port, (struct ether_addr *)(arppkt + 6 + 6 + 2 + 8 + VLAN_OFFSET));
+
+		// change ip orig in arp
+		arppkt[29 + VLAN_OFFSET] = 1;                                                    // arppkt[25];
+		arppkt[30 + VLAN_OFFSET] = 2;                                                    // arppkt[26];
+		arppkt[31 + VLAN_OFFSET] = arppkt[25 + VLAN_OFFSET] + arppkt[27 + VLAN_OFFSET];  // arppkt[27];
+
+		printf ("ETHOrig (%d) set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX\n",
+		        port,
+		        arppkt[6],
+		        arppkt[7],
+		        arppkt[8],
+		        arppkt[9],
+		        arppkt[10],
+		        arppkt[11]);
+
+		printf ("ETHDest (%d) set to: %hhX:%hhX:%hhX:%hhX:%hhX:%hhX\n",
+		        port,
+		        icmppkt[0],
+		        icmppkt[1],
+		        icmppkt[2],
+		        icmppkt[3],
+		        icmppkt[4],
+		        icmppkt[5]);
+
+		printf ("IPOrig  (%d) set to: %hhu.%hhu.%hhu.%hhu\n",
+		        port,
+		        arppkt[28 + VLAN_OFFSET],
+		        arppkt[29 + VLAN_OFFSET],
+		        arppkt[30 + VLAN_OFFSET],
+		        arppkt[31 + VLAN_OFFSET]);
+
+		printf ("IPDest  (%d) set to: %hhu.%hhu.%hhu.%hhu\n",
+		        port,
+		        arppkt[38 + VLAN_OFFSET],
+		        arppkt[39 + VLAN_OFFSET],
+		        arppkt[40 + VLAN_OFFSET],
+		        arppkt[41 + VLAN_OFFSET]);
 
 		// set IP Checksum
-		struct ipv4_hdr *hdr = (struct ipv4_hdr *)(icmppkt + 6 + 6 + 2);
+		struct ipv4_hdr *hdr = (struct ipv4_hdr *)(icmppkt + 6 + 6 + 2 + VLAN_OFFSET);
+		hdr->total_length    = htons (sndpktlen - (14 + VLAN_OFFSET));
 		hdr->hdr_checksum    = 0;
 		hdr->hdr_checksum    = rte_ipv4_cksum (hdr);
+
+		rte_eth_dev_stop (port);
+
+		/* Start port */
+		ret = rte_eth_dev_start (port);
+		if (ret < 0) {
+			rte_panic ("Cannot start port %d (%d)\n", port, ret);
+		}
 	}
 
 	check_all_ports_link_status (APP_MAX_NIC_PORTS, (~0x0));

@@ -65,7 +65,6 @@
 #include <rte_memzone.h>
 #include <rte_pci.h>
 #include <rte_per_lcore.h>
-#include <rte_per_lcore.h>
 #include <rte_prefetch.h>
 #include <rte_random.h>
 #include <rte_ring.h>
@@ -74,6 +73,10 @@
 #include <rte_tcp.h>
 
 #include "main.h"
+
+#ifdef APP_LIMITBW
+extern uint64_t bwlimitNSwait;
+#endif
 
 struct app_params app;
 
@@ -121,6 +124,9 @@ static const char usage[] =
     "    --bw : Only measures bandwidth, but with higher resolution                 \n"
     "    --bwp: Only measures bandwidth(pasive) by just listening. No packet is sent\n"
     "    --lo : The application works in loopback mode. Used to measure RTT         \n"
+#ifdef APP_LIMITBW
+    "    --lim: Limit bw sent in MEGABITS                                           \n"
+#endif
 
     "                                                                               \n"
     "Calibration Parameters                                                         \n"
@@ -149,8 +155,7 @@ void app_print_usage (void) {
 #define APP_ARG_RX_MAX_TUPLES 128
 #endif
 
-static int str_to_unsigned_array (
-    const char *s, size_t sbuflen, char separator, unsigned num_vals, unsigned *vals) {
+static int str_to_unsigned_array (const char *s, size_t sbuflen, char separator, unsigned num_vals, unsigned *vals) {
 	char str[sbuflen + 1];
 	char *splits[num_vals];
 	char *endptr = NULL;
@@ -170,8 +175,7 @@ static int str_to_unsigned_array (
 	return num_splits;
 }
 
-static int str_to_unsigned_vals (
-    const char *s, size_t sbuflen, char separator, unsigned num_vals, ...) {
+static int str_to_unsigned_vals (const char *s, size_t sbuflen, char separator, unsigned num_vals, ...) {
 	unsigned i, vals[num_vals];
 	va_list ap;
 
@@ -200,8 +204,7 @@ static int parse_arg_rx (const char *arg) {
 		uint32_t port, queue, lcore, i;
 
 		p0 = strchr (p++, ')');
-		if ((p0 == NULL) ||
-		    (str_to_unsigned_vals (p, p0 - p, ',', 3, &port, &queue, &lcore) != 3)) {
+		if ((p0 == NULL) || (str_to_unsigned_vals (p, p0 - p, ',', 3, &port, &queue, &lcore) != 3)) {
 			return -2;
 		}
 
@@ -228,8 +231,7 @@ static int parse_arg_rx (const char *arg) {
 		}
 		lp->type = e_APP_LCORE_IO;
 		for (i = 0; i < lp->io.rx.n_nic_queues; i++) {
-			if ((lp->io.rx.nic_queues[i].port == port) &&
-			    (lp->io.rx.nic_queues[i].queue == queue)) {
+			if ((lp->io.rx.nic_queues[i].port == port) && (lp->io.rx.nic_queues[i].queue == queue)) {
 				return -8;
 			}
 		}
@@ -275,8 +277,7 @@ static int parse_arg_tx (const char *arg) {
 		uint32_t port, queue, lcore, i;
 
 		p0 = strchr (p++, ')');
-		if ((p0 == NULL) ||
-		    (str_to_unsigned_vals (p, p0 - p, ',', 3, &port, &queue, &lcore) != 3)) {
+		if ((p0 == NULL) || (str_to_unsigned_vals (p, p0 - p, ',', 3, &port, &queue, &lcore) != 3)) {
 			return -2;
 		}
 
@@ -303,8 +304,7 @@ static int parse_arg_tx (const char *arg) {
 		}
 		lp->type = e_APP_LCORE_IO;
 		for (i = 0; i < lp->io.tx.n_nic_queues; i++) {
-			if ((lp->io.tx.nic_queues[i].port == port) &&
-			    (lp->io.tx.nic_queues[i].queue == queue)) {
+			if ((lp->io.tx.nic_queues[i].port == port) && (lp->io.tx.nic_queues[i].queue == queue)) {
 				return -8;
 			}
 		}
@@ -322,7 +322,7 @@ static int parse_arg_tx (const char *arg) {
 	}
 
 	if (n_tuples == 0) {
-		return -11;
+		//		return -11;
 	}
 
 	return 0;
@@ -337,8 +337,7 @@ static int parse_arg_rsz (const char *arg) {
 		return -1;
 	}
 
-	if (str_to_unsigned_vals (
-	        arg, APP_ARG_RSZ_CHARS, ',', 2, &app.nic_rx_ring_size, &app.nic_tx_ring_size) != 2)
+	if (str_to_unsigned_vals (arg, APP_ARG_RSZ_CHARS, ',', 2, &app.nic_rx_ring_size, &app.nic_tx_ring_size) != 2)
 		return -2;
 
 	if ((app.nic_rx_ring_size == 0) || (app.nic_tx_ring_size == 0)) {
@@ -357,20 +356,15 @@ static int parse_arg_bsz (const char *arg) {
 		return -1;
 	}
 
-	if (str_to_unsigned_vals (arg,
-	                          APP_ARG_BSZ_CHARS,
-	                          ',',
-	                          2,
-	                          &app.burst_size_io_rx_read,
-	                          &app.burst_size_io_tx_write) != 2)
+	if (str_to_unsigned_vals (
+	        arg, APP_ARG_BSZ_CHARS, ',', 2, &app.burst_size_io_rx_read, &app.burst_size_io_tx_write) != 2)
 		return -2;
 
 	if ((app.burst_size_io_rx_read == 0) || (app.burst_size_io_tx_write == 0)) {
 		return -7;
 	}
 
-	if ((app.burst_size_io_rx_read > APP_MBUF_ARRAY_SIZE) ||
-	    (app.burst_size_io_tx_write > APP_MBUF_ARRAY_SIZE)) {
+	if ((app.burst_size_io_rx_read > APP_MBUF_ARRAY_SIZE) || (app.burst_size_io_tx_write > APP_MBUF_ARRAY_SIZE)) {
 		return -8;
 	}
 
@@ -382,6 +376,7 @@ static int parse_arg_bsz (const char *arg) {
 #endif
 
 extern uint8_t icmppkt[];
+extern uint8_t arppkt[];
 extern int doChecksum;
 extern int autoIncNum;
 extern int selectiveTS;
@@ -408,18 +403,14 @@ extern FILE *calibfd;
 static int parse_arg_etho (const char *arg) {
 	uint8_t etho[6];
 
-	if (sscanf (arg,
-	            "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX",
-	            etho + 0,
-	            etho + 1,
-	            etho + 2,
-	            etho + 3,
-	            etho + 4,
-	            etho + 5) != sizeof (etho)) {
+	if (sscanf (arg, "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX", etho + 0, etho + 1, etho + 2, etho + 3, etho + 4, etho + 5) !=
+	    sizeof (etho)) {
 		return -1;
 	}
 
 	memcpy (icmppkt + 6, etho, sizeof (etho));
+	memcpy (arppkt + 6, etho, sizeof (etho));
+	memcpy (arppkt + 6 + 6 + 2 + VLAN_OFFSET + 8, etho, sizeof (etho));
 
 	return 0;
 }
@@ -427,18 +418,14 @@ static int parse_arg_etho (const char *arg) {
 static int parse_arg_ethd (const char *arg) {
 	uint8_t ethd[6];
 
-	if (sscanf (arg,
-	            "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX",
-	            ethd + 0,
-	            ethd + 1,
-	            ethd + 2,
-	            ethd + 3,
-	            ethd + 4,
-	            ethd + 5) != sizeof (ethd)) {
+	if (sscanf (arg, "%hhX:%hhX:%hhX:%hhX:%hhX:%hhX", ethd + 0, ethd + 1, ethd + 2, ethd + 3, ethd + 4, ethd + 5) !=
+	    sizeof (ethd)) {
 		return -1;
 	}
 
 	memcpy (icmppkt, ethd, sizeof (ethd));
+	memcpy (arppkt, ethd, sizeof (ethd));
+	memcpy (arppkt + 6 + 6 + 2 + VLAN_OFFSET + 8 + 6 + 4, ethd, sizeof (ethd));
 
 	return 0;
 }
@@ -450,7 +437,8 @@ static int parse_arg_ipo (const char *arg) {
 		return -1;
 	}
 
-	memcpy (icmppkt + 6 + 6 + 2 + 3 * 4, ip, sizeof (ip));
+	memcpy (arppkt + 6 + 6 + 2 + VLAN_OFFSET + 8 + 6, ip, sizeof (ip));
+	memcpy (icmppkt + 6 + 6 + 2 + VLAN_OFFSET + 3 * 4, ip, sizeof (ip));
 
 	return 0;
 }
@@ -462,7 +450,8 @@ static int parse_arg_ipd (const char *arg) {
 		return -1;
 	}
 
-	memcpy (icmppkt + 6 + 6 + 2 + 4 * 4, ip, sizeof (ip));
+	memcpy (arppkt + 6 + 6 + 2 + VLAN_OFFSET + 8 + 6 + 4 + 6, ip, sizeof (ip));
+	memcpy (icmppkt + 6 + 6 + 2 + VLAN_OFFSET + 4 * 4, ip, sizeof (ip));
 
 	return 0;
 }
@@ -561,6 +550,8 @@ int app_parse_args (int argc, char **argv) {
 	                                 {"bw", 0, 0, 0},
 	                                 {"bwp", 0, 0, 0},
 	                                 {"sts", 0, 0, 0},
+	                                 // bw limits
+	                                 {"lim", 1, 0, 0},
 	                                 // debug
 	                                 {"hw", 0, 0, 0},
 	                                 // calibrarion
@@ -570,10 +561,10 @@ int app_parse_args (int argc, char **argv) {
 	                                 {"outputFile", 1, 0, 0},
 	                                 // endlist
 	                                 {NULL, 0, 0, 0}};
-	uint32_t arg_rx  = 0;
-	uint32_t arg_tx  = 0;
-	uint32_t arg_rsz = 0;
-	uint32_t arg_bsz = 0;
+	uint32_t arg_rx               = 0;
+	uint32_t arg_tx               = 0;
+	uint32_t arg_rsz              = 0;
+	uint32_t arg_bsz              = 0;
 
 	argvopt = argv;
 
@@ -616,109 +607,84 @@ int app_parse_args (int argc, char **argv) {
 				if (!strcmp (lgopts[option_index].name, "etho")) {
 					ret = parse_arg_etho (optarg);
 					if (ret) {
-						printf ("Incorrect value for --etho argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --etho argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "ethd")) {
 					ret = parse_arg_ethd (optarg);
 					if (ret) {
-						printf ("Incorrect value for --ethd argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --ethd argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "ipo")) {
 					ret = parse_arg_ipo (optarg);
 					if (ret) {
-						printf ("Incorrect value for --ipo argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --ipo argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "ipd")) {
 					ret = parse_arg_ipd (optarg);
 					if (ret) {
-						printf ("Incorrect value for --ipd argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --ipd argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "pktLen")) {
 					ret = parse_arg_pktLen (optarg);
 					if (ret) {
-						printf ("Incorrect value for --pktLen argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --pktLen argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "trainLen")) {
 					ret = parse_arg_trainLen (optarg);
 					if (ret) {
-						printf ("Incorrect value for --trainLen argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --trainLen argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "trainSleep")) {
 					ret = parse_arg_trainSleep (optarg);
 					if (ret) {
-						printf ("Incorrect value for --trainSleep argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --trainSleep argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "trainFriends")) {
 					ret = parse_arg_trainFriends (optarg);
 					if (ret) {
-						printf (
-						    "Incorrect value for --trainFriends argument (%s, error code: %d)\n",
-						    optarg,
-						    ret);
+						printf ("Incorrect value for --trainFriends argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "waitTime")) {
 					ret = parse_arg_waitTime (optarg);
 					if (ret) {
-						printf ("Incorrect value for --waitTime argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --waitTime argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "calibrate")) {
 					ret = parse_arg_calibrate (optarg);
 					if (ret) {
-						printf ("Incorrect value for --calibrate argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --calibrate argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "calibration")) {
 					ret = parse_arg_calibration (optarg);
 					if (ret) {
-						printf ("Incorrect value for --calibration argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --calibration argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
 				if (!strcmp (lgopts[option_index].name, "outputFile")) {
 					ret = parse_arg_outputFile (optarg);
 					if (ret) {
-						printf ("Incorrect value for --outputFile argument (%s, error code: %d)\n",
-						        optarg,
-						        ret);
+						printf ("Incorrect value for --outputFile argument (%s, error code: %d)\n", optarg, ret);
 						return -1;
 					}
 				}
@@ -733,8 +699,12 @@ int app_parse_args (int argc, char **argv) {
 					bandWidthMeasureActive = 1;
 				}
 				if (!strcmp (lgopts[option_index].name, "bwp")) {
-					bandWidthMeasure = 1;
+					bandWidthMeasure       = 1;
 					bandWidthMeasureActive = 0;
+				}
+				if (!strcmp (lgopts[option_index].name, "lim")) {
+					// Bandwidth tests, limitation
+					bwlimitNSwait = atoi (optarg);
 				}
 				if (!strcmp (lgopts[option_index].name, "hw")) {
 					hwTimeTest = 1;
@@ -774,6 +744,16 @@ int app_parse_args (int argc, char **argv) {
 		printf ("No trainLength set, activating --bw mode\n");
 		bandWidthMeasure       = 1;
 		bandWidthMeasureActive = 1;
+	}
+
+	// Recalc bwlimitNSwait
+	if (bwlimitNSwait != 0) {
+		double use_percent = bwlimitNSwait / 10000.; /* HARDCODED for 10G links */
+		double bulk_time =
+		    ((sndpktlen + 4 + 8 + 12) * 8. * app.burst_size_io_tx_write) / 10.; /* HARDCODED for 10G links */
+		bwlimitNSwait = (bulk_time / use_percent - bulk_time);
+
+		printf ("BW LIMITED. Inter-bulk wait of %lu nanoseconds set\n", bwlimitNSwait);
 	}
 
 	ret    = optind - 1;
@@ -946,9 +926,7 @@ void app_print_params (void) {
 
 		printf ("RX ports  ");
 		for (i = 0; i < lp->rx.n_nic_queues; i++) {
-			printf ("(%u, %u)  ",
-			        (unsigned)lp->rx.nic_queues[i].port,
-			        (unsigned)lp->rx.nic_queues[i].queue);
+			printf ("(%u, %u)  ", (unsigned)lp->rx.nic_queues[i].port, (unsigned)lp->rx.nic_queues[i].queue);
 		}
 		printf (";\n");
 	}
@@ -984,17 +962,13 @@ void app_print_params (void) {
 
 		printf ("TX ports  ");
 		for (i = 0; i < lp->tx.n_nic_queues; i++) {
-			printf ("(%u, %u)  ",
-			        (unsigned)lp->tx.nic_queues[i].port,
-			        (unsigned)lp->tx.nic_queues[i].queue);
+			printf ("(%u, %u)  ", (unsigned)lp->tx.nic_queues[i].port, (unsigned)lp->tx.nic_queues[i].queue);
 		}
 		printf (";\n");
 	}
 
 	/* Rings */
-	printf ("Ring sizes: NIC RX = %u; NIC TX = %u;\n",
-	        (unsigned)app.nic_rx_ring_size,
-	        (unsigned)app.nic_tx_ring_size);
+	printf ("Ring sizes: NIC RX = %u; NIC TX = %u;\n", (unsigned)app.nic_rx_ring_size, (unsigned)app.nic_tx_ring_size);
 
 	/* Bursts */
 	printf ("Burst sizes: I/O RX rd = %u; I/O TX wr = %u)\n",

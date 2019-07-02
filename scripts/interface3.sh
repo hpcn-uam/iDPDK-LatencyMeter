@@ -47,7 +47,7 @@ make && \
         #       is 144)
         #   F = I/O TX lcore write burst size to NIC TX (default value is 144)   
 \
-        sudo build/app/hpcn_latency --socket-mem 8192,8192 --file-prefix iface0 -c FFC00 -n 4 -w 0000:19:00.0 -- --rx "(0,0,11)" --tx "(0,0,12)" \
+        sudo build/app/hpcn_latency --socket-mem 1024,8192 --file-prefix iface3 -c FFC00 -n 4 -w 0000:d8:00.1 -- --rx "(0,0,15)" --tx "(0,0,16)" \
                 --rsz "1024, 1024" \
                 --bsz "144, 144" \
 		--trainSleep 0 $@
